@@ -114,10 +114,11 @@ export default function Chat({ onExit }: { onExit?: () => void }) {
 
     lines.forEach(line => {
       const wrapped = doc.splitTextToSize(line, 180);
-      wrapped.forEach(w => {
-        doc.text(w, 14, y);
-        y += 6;
-      });
+wrapped.forEach((w: string) => {
+  doc.text(w, 14, y);
+  y += 6;
+});
+
       y += 2;
     });
 
@@ -130,7 +131,7 @@ export default function Chat({ onExit }: { onExit?: () => void }) {
     messages.forEach(msg => {
       const who = msg.role === "user" ? "You" : msg.role === "assistant" ? "Coach" : "System";
       const wrapped = doc.splitTextToSize(`${who}: ${msg.content}`, 180);
-      wrapped.forEach(w => {
+      wrapped.forEach((w: string) => {
         if (y > 280) {
           doc.addPage();
           y = 14;
