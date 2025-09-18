@@ -114,11 +114,10 @@ export default function Chat({ onExit }: { onExit?: () => void }) {
 
     lines.forEach(line => {
       const wrapped = doc.splitTextToSize(line, 180);
-wrapped.forEach((w: string) => {
-  doc.text(w, 14, y);
-  y += 6;
-});
-
+      wrapped.forEach((w: string) => {
+      doc.text(w, 14, y);
+      y += 6;
+      });
       y += 2;
     });
 
