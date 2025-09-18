@@ -91,3 +91,21 @@
   /* Optional: give any plain <hr> a subtle look */
   .thw-chat hr { @apply border-slate-200 dark:border-white/10 my-4; }
 }
+@layer components {
+  /* Brand header style for the first H1 in the chat area */
+  .thw-chat h1:first-of-type {
+    @apply text-2xl md:text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 mb-3;
+    position: relative;
+  }
+  .thw-chat h1:first-of-type::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -8px;
+    height: 3px;
+    width: 160px;
+    background: linear-gradient(90deg, #2563eb, #16a34a, #f59e0b);
+    border-radius: 9999px;
+    opacity: 0.9;
+  }
+}
