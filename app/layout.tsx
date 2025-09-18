@@ -1,3 +1,5 @@
+import './globals.css';
+
 export const metadata = {
   title: "Tortoise & Hare — Reset (Improved)",
   description: "Lean, fast chat + goals app",

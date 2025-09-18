@@ -3,6 +3,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Chat from "@/components/Chat";
+import { Card, CardContent } from "@/components/ui/card";
+
 
 export default function Page() {
   const [showChat, setShowChat] = useState(false);
@@ -40,7 +42,17 @@ export default function Page() {
 
   if (showChat) {
     // Pass onExit so Chat can call it after: await fetch('/api/feedback', ...);
-    return <Chat onExit={handleExit} />;
+    return (
+      <div className="min-h-screen bg-brand-bg-light dark:bg-brand-bg-dark px-4 py-6">
+       <div className="mx-auto max-w-5xl">
+        <Card className="rounded-2xl shadow-sm border bg-white/80 dark:bg-card/80 backdrop-blur">
+        <CardContent className="p-4 md:p-6">
+          <Chat onExit={handleExit} />
+        </CardContent>
+      </Card>
+    </div>
+  </div>
+);
   }
 
   return (

@@ -3,6 +3,8 @@
 
 import React, { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { jsPDF } from "jspdf";
+import { Card, CardContent } from "@/components/ui/card";
+
 
 type Role = "user" | "assistant" | "system";
 type Msg = { id: string; role: Role; content: string };
