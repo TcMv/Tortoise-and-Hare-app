@@ -401,8 +401,11 @@ function ModeBar({ onQuick }: { onQuick: (text: string) => void }) {
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
         <QuickChip
+          className="pill"   // ← this applies the rounded chip styling from globals.css
           label="Lately I've been feeling..."
-          onClick={() => onQuick("I'd like to talk about what I have been feeling.")}
+          onClick={() => onQuick("I'd like to talk about what I have been feeling.")
+            
+          }
         />
 
         <QuickChip
