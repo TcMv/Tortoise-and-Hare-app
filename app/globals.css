@@ -44,7 +44,7 @@
   .thw-chat ul { @apply list-disc pl-5 space-y-1; }
   .thw-chat li { @apply text-slate-700 dark:text-slate-200; }
 
-/* Bigger default buttons inside the chat */
+  /* Bigger default buttons inside the chat */
   .thw-chat button {
     @apply inline-flex items-center gap-2 rounded-2xl
            border border-slate-200 bg-white
@@ -68,13 +68,12 @@
     @apply bg-brand-blue text-white border-transparent hover:opacity-95
            px-5 py-3 text-base min-h-[46px];
   }
-}
 
   /* Input and textarea styling */
   .thw-chat input[type="text"],
   .thw-chat input[type="search"],
   .thw-chat textarea {
-    @apply w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-800 
+    @apply w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-slate-800 
            shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/40;
   }
   .dark .thw-chat input[type="text"],
@@ -83,25 +82,14 @@
     @apply border-white/10 bg-slate-900/60 text-slate-100 placeholder:text-slate-400;
   }
 
-  /* Pills (your small option chips) */
-  .thw-chat .chip,
-  .thw-chat .pill {
-    @apply inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white/70 px-3 py-1.5 text-sm;
-  }
-  .dark .thw-chat .chip,
-  .dark .thw-chat .pill {
-    @apply border-white/10 bg-slate-900/60;
-  }
-
-  /* Soft section separators if your UI prints labels like “Conversation Starters” */
+  /* Pills container / option chips */
   .thw-chat .section-label {
     @apply text-slate-500 dark:text-slate-400 text-sm font-medium;
   }
 
   /* Optional: give any plain <hr> a subtle look */
   .thw-chat hr { @apply border-slate-200 dark:border-white/10 my-4; }
-}
-@layer components {
+
   /* Brand header style for the first H1 in the chat area */
   .thw-chat h1:first-of-type {
     @apply text-2xl md:text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 mb-3;
