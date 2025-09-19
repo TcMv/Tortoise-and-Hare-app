@@ -44,21 +44,31 @@
   .thw-chat ul { @apply list-disc pl-5 space-y-1; }
   .thw-chat li { @apply text-slate-700 dark:text-slate-200; }
 
-  /* Generic buttons (covers your conversation starters & top actions) */
+/* Bigger default buttons inside the chat */
   .thw-chat button {
-    @apply inline-flex items-center gap-2 rounded-xl border border-slate-200 
-           bg-white px-3 py-2 text-sm font-medium text-slate-800 shadow-sm
-           hover:bg-slate-50 active:translate-y-[1px] transition;
+    @apply inline-flex items-center gap-2 rounded-2xl
+           border border-slate-200 bg-white
+           px-4 py-2.5 text-base font-medium text-slate-800
+           shadow-sm hover:bg-slate-50 active:translate-y-[1px]
+           transition min-h-[44px];
   }
   .dark .thw-chat button {
     @apply border-white/10 bg-slate-900/60 text-slate-100 hover:bg-slate-900;
   }
 
-  /* “Primary” looking buttons (if any have type=submit or .primary) */
+  /* Chips (QuickChip etc.) a touch larger too */
+  .thw-chat .pill,
+  .thw-chat .chip {
+    @apply px-4 py-2.5 text-base rounded-2xl;
+  }
+
+  /* Primary/Send button larger and solid */
   .thw-chat button[type="submit"],
   .thw-chat .primary {
-    @apply bg-brand-blue text-white border-transparent hover:opacity-95;
+    @apply bg-brand-blue text-white border-transparent hover:opacity-95
+           px-5 py-3 text-base min-h-[46px];
   }
+}
 
   /* Input and textarea styling */
   .thw-chat input[type="text"],
