@@ -404,7 +404,7 @@ function ModeBar({ onQuick }: { onQuick: (text: string) => void }) {
           className="pill"   // ← this applies the rounded chip styling from globals.css
           label="Lately I've been feeling..."
           onClick={() => onQuick("I'd like to talk about what I have been feeling.")
-            
+
           }
         />
 
@@ -434,22 +434,20 @@ function ModeBar({ onQuick }: { onQuick: (text: string) => void }) {
 }
 
 
-function QuickChip({ label, onClick }: { label: string; onClick: () => void }) {
+type QuickChipProps = {
+  label: string;
+  onClick?: () => void;
+  className?: string; // ✅
+};
+
+function QuickChip({ label, onClick, className }: QuickChipProps) {
   return (
-    <button
-      onClick={onClick}
-      style={{
-        borderRadius: 999,
-        padding: "8px 12px",
-        border: "1px solid #ddd",
-        background: "#fff",
-        cursor: "pointer"
-      }}
-    >
+    <button type="button" onClick={onClick} className={className}>
       {label}
     </button>
   );
 }
+
 
 function ProtocolBanner({ qNumber }: { qNumber: number }) {
   const pct = Math.round((qNumber / 11) * 100);
