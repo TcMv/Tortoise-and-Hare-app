@@ -196,6 +196,11 @@ Overall goals:
     // Add a timeout so the client isn't stuck if upstream is slow
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s
+    // Ensure at least one user message (OpenAI rejects messages without a user turn)
+    const hasUser = messagesForModel.some(m => m.role === "user");
+    if (!hasUser) {
+      messagesForModel.push({ role: "user", content: "Hello" });
+    }
 
     const r = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
