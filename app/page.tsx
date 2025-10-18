@@ -62,7 +62,7 @@ export default function Page() {
         <div className="mx-auto max-w-6xl px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Image
-            src="/tortoise_and_hare_logo.png"
+            src="/tortoise-hare-logo.png"
             alt="Tortoise & Hare Wellness"
             width={160}
             height={48}
