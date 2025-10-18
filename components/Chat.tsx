@@ -42,8 +42,8 @@ export default function Chat({ onExit }: { onExit?: () => void }) {
   const [messages, setMessages] = useState<Msg[]>([
     { id: uid(), role: "assistant", content: 
         "Hi there 👋, welcome to Tortoise and Hare Wellness. I am here to support you. \n\n" +
-        "Would you like to tell me about about what brought you here today, or would you prefer to select a conversation starter above?\n\n" +
-        "Remember our chat is not monitored, recorded or stored. If you or someone you know is at risk of harm please ensure to call a help line like Lifeline 13 11 14 or in an emergency call 000 (Australia). For other regions, contact your local emergency number." }
+        "Would you like to tell me about about what brought you here today, or would you prefer to select a conversation starter above?\n\n"
+        }
   ]);
   const [value, setValue] = useState("");
   const [isPending, startTransition] = useTransition();
