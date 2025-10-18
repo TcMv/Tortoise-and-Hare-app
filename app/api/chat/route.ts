@@ -42,6 +42,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  console.log("HIT /api/chat", { method: "POST", url: req.nextUrl?.toString() });
+
   try {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
@@ -68,6 +70,10 @@ export async function POST(req: NextRequest) {
       if (out.test(t)) return "out_of_scope";
 
       return "wellbeing";
+    }
+    // Quick bypass: if ?dry=1, return immediately without calling OpenAI
+    if (req.nextUrl?.searchParams?.get("dry") === "1") {
+      return json({ reply: "(dry) API route is reachable." }, { status: 200 });
     }
 
     const latestUserText =
