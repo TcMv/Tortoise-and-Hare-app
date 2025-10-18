@@ -2,8 +2,9 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { jsPDF } from "jspdf";
 import { Card, CardContent } from "@/components/ui/card";
+import { exportChatPdf } from "@/lib/exportPdf";  // ✅ must be here, not inside the component
+
 
 
 type Role = "user" | "assistant" | "system";
@@ -28,6 +29,12 @@ function isMoodProtocolActive(items: Msg[]) {
   const n = getCurrentQuestionNumber(items);
   return n !== null && n >= 1 && n <= 11;
 }
+// Simple placeholder so Hints has something to read.
+// You can replace this later if you want smarter hints.
+function summarize(_items: Msg[]) {
+  return { issue: "", shortTerm: "", longTerm: "" };
+}
+
 
 export default function Chat({ onExit }: { onExit?: () => void }) {
   const [messages, setMessages] = useState<Msg[]>([
@@ -100,51 +107,16 @@ export default function Chat({ onExit }: { onExit?: () => void }) {
     });
   }
 
-  function exportPDF() {
-    const doc = new jsPDF();
-    let y = 14;
-    doc.setFontSize(16);
-    doc.text("Tortoise & Hare — Session Summary", 14, y);
-    y += 8;
-    doc.setFontSize(11);
+  
 
-    const lines = [
-      `Issue: ${summary.issue || "—"}`,
-      `Short-term advice: ${summary.shortTerm || "—"}`,
-      `Long-term goals: ${summary.longTerm || "—"}`
-    ];
-
-    lines.forEach(line => {
-      const wrapped = doc.splitTextToSize(line, 180);
-      wrapped.forEach((w: string) => {
-      doc.text(w, 14, y);
-      y += 6;
-      });
-      y += 2;
-    });
-
-    y += 6;
-    doc.setFontSize(12);
-    doc.text("Conversation", 14, y);
-    y += 6;
-    doc.setFontSize(10);
-
-    messages.forEach(msg => {
-      const who = msg.role === "user" ? "You" : msg.role === "assistant" ? "Coach" : "System";
-      const wrapped = doc.splitTextToSize(`${who}: ${msg.content}`, 180);
-      wrapped.forEach((w: string) => {
-        if (y > 280) {
-          doc.addPage();
-          y = 14;
-        }
-        doc.text(w, 14, y);
-        y += 5;
-      });
-      y += 2;
-    });
-
-    doc.save("tortoise-hare-summary.pdf");
+// Somewhere inside your component:
+async function exportPDF() {
+  try {
+    await exportChatPdf(messages); // 👈 messages is your chat history state
+  } catch (e: any) {
+    alert(`Export failed: ${e?.message || e}`);
   }
+}
 
   // ⬇️ record feedback; if source is "manual" (End chat), go back to the opening page after logging
   async function recordFeedback(rating: "up" | "down", source: "auto" | "manual") {
@@ -492,21 +464,4 @@ function Hints({ summary, onUse }: { summary: { issue: string; shortTerm: string
       </ul>
     </div>
   );
-}
-
-// Naive extractors to seed the PDF
-function summarize(items: Msg[]) {
-  const full = items.map(m => `${m.role}: ${m.content}`).join("\n");
-  const issue = pick(full, [/issue[:\-]\s*(.+)/i, /problem[:\-]\s*(.+)/i]);
-  const shortTerm = pick(full, [/short[-\s]?term.*?:\s*(.+)/i, /quick tip[:\-]\s*(.+)/i]);
-  const longTerm = pick(full, [/long[-\s]?term.*?:\s*(.+)/i, /goal[s]?[:\-]\s*(.+)/i]);
-  return { issue, shortTerm, longTerm };
-}
-
-function pick(text: string, regs: RegExp[]) {
-  for (const r of regs) {
-    const m = text.match(r);
-    if (m) return m[1].trim();
-  }
-  return "";
 }
