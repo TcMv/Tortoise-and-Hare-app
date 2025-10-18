@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Chat from "@/components/Chat";
 import { Card, CardContent } from "@/components/ui/card";
+import Image from "next/image";
 // If you have a logo file, drop it in /public/logo-thw.svg and uncomment the next line:
 // import Image from "next/image";
 
@@ -60,13 +61,14 @@ export default function Page() {
       <header className="sticky top-0 z-40 w-full border-b border-black/5 bg-[#FFF8F1]/90 backdrop-blur">
         <div className="mx-auto max-w-6xl px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {/* If you have a logo file, use Image here */}
-            {/* <Image src="/logo-thw.svg" alt="Tortoise & Hare Wellness" width={36} height={36} /> */}
-            <div className="flex items-center gap-2">
-              {/* simple tortoise & hare mark as placeholder */}
-              <span aria-hidden className="text-xl">🐢🐇</span>
-              <span className="font-semibold tracking-tight">Tortoise &amp; Hare Wellness</span>
-            </div>
+            <Image
+            src="/tortoise_and_hare_logo.png"
+            alt="Tortoise & Hare Wellness"
+            width={160}
+            height={48}
+            priority
+            />
+
           </div>
 
           <nav className="hidden md:flex items-center gap-6">
