@@ -149,8 +149,7 @@ const handleResetChat = () => {
       role: "assistant",
       content:
         "Hi there 👋, welcome to Tortoise and Hare Wellness. I am here to support you. \n\n" +
-        "Would you like to tell me about about what brought you here today, or would you prefer me ask you some questions?\n\n" +
-        "Remember our chat is not monitored, recorded or stored. If you or someone you know is at risk of harm please ensure to call a help line like Beyond Blue or 000 in an emergency"
+        "Would you like to tell me about about what brought you here today, or would you prefer me ask you some questions?"   
     }
   ]);
   setFeedback(null);
@@ -466,14 +465,8 @@ function Hints({ summary, onUse }: { summary: { issue: string; shortTerm: string
   if (!hints.length) return null;
   return (
     <div style={{ marginTop: 16, fontSize: 13, opacity: 0.7 }}>
-      <div style={{ marginBottom: 4 }}>Helpful Starters (click a helpful starter to begin you conversation):</div>
-      <ul>
-        {hints.map((h, i) => (
-          <li key={i} style={{ cursor: "pointer" }} onClick={() => onUse(h)}>
-            {h}
-          </li>
-        ))}
-      </ul>
+      <div style={{ marginBottom: 4 }}>Remember our chat is not monitored, recorded or stored. If you or someone you know is at risk of harm please ensure to call a help line like Lifeline 13 11 14 or in an emergency call 000 (Australia). For other regions, contact your local emergency number.</div>
+      
     </div>
   );
 }
