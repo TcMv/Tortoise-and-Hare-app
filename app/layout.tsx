@@ -3,8 +3,11 @@ import type { Metadata } from "next";
 import ClientPrivacyHost from "@/components/ClientPrivacyHost";
 
 export const metadata: Metadata = {
-  title: "Tortoise & Hare — Reset (Improved)",
-  description: "Lean, fast chat + goals app",
+  title: "Tortoise & Hare Wellness App",
+  description: "Your personal AI wellness coach for instant advice and long-term growth.",
+  icons: {
+    icon: "/tortoise-hare-logo-favicon.png",
+  }
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
