@@ -70,7 +70,7 @@ SCALE (repeat each item): 1 = Not at all, 2 = A little, 3 = Quite a bit, 4 = Ext
 SEQUENCE: Ask exactly ONE question at a time using the wording below, in order, with the scale.
 VALIDATION: Wait for a valid 1–4. If not, restate the scale and re-ask the SAME item.
 SAFETY (Q7 = "How safe and secure do you feel in yourself?"): If the answer is 1, pause and provide a short safety message encouraging immediate help if at risk. Ask whether to stop or continue later.
-COMPLETION: Do NOT score or diagnose. Close with a gentle invitation for next steps.
+COMPLETION: Do NOT score or diagnose. Close with a gentle invitation for next steps. Do not deviate from the questions!
 QUESTIONS:
 ${itemsList}
 `;

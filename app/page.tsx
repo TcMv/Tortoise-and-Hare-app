@@ -40,10 +40,48 @@ export default function Page() {
   }, [handleExit]);
 
   // ---- Chat view ----
-  if (showChat) {
-    return (
-      <div className="min-h-screen bg-[#FFF8F1] px-4 py-6">
-        <div className="mx-auto max-w-5xl">
+if (showChat) {
+  return (
+    <main className="min-h-screen flex flex-col bg-[#FFF8F1] text-[#11122D]">
+      {/* Full-width header (same style as landing) */}
+      <header className="sticky top-0 z-40 w-full border-b border-black/5 bg-[#FFF8F1]/90 backdrop-blur">
+        <div className="mx-auto max-w-6xl px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Image
+              src="/tortoise-hare-logo.png"
+              alt="Tortoise & Hare Wellness"
+              width={200}
+              height={60}
+              priority
+            />
+          </div>
+
+          <nav className="hidden md:flex items-center gap-6">
+            <button
+              className="text-sm hover:opacity-75"
+              onClick={() => window.dispatchEvent(new Event("thw:export-pdf"))}
+            >
+              Export PDF
+            </button>
+            <button
+              className="text-sm hover:opacity-75"
+              onClick={() => window.dispatchEvent(new Event("thw:reset-chat"))}
+            >
+              Reset Chat
+            </button>
+            <button
+              className="text-sm hover:opacity-75"
+              onClick={() => window.dispatchEvent(new Event("thw:end-chat"))}
+            >
+              End Chat
+            </button>
+          </nav>
+        </div>
+      </header>
+
+      {/* Chat box below header */}
+      <div className="flex-1 flex items-start justify-center mt-8 px-4">
+        <div className="w-full max-w-5xl">
           <Card className="rounded-2xl shadow-sm border bg-white/90 backdrop-blur">
             <CardContent className="p-4 md:p-6">
               <Chat onExit={handleExit} />
@@ -51,8 +89,10 @@ export default function Page() {
           </Card>
         </div>
       </div>
-    );
-  }
+    </main>
+  );
+}
+
 
   // ---- Landing view ----
   return (
@@ -64,8 +104,8 @@ export default function Page() {
             <Image
             src="/tortoise-hare-logo.png"
             alt="Tortoise & Hare Wellness"
-            width={160}
-            height={48}
+            width={200}
+            height={60}
             priority
             />
 
@@ -88,9 +128,16 @@ export default function Page() {
             >
               Book Counselling Session
             </a>
-            <a className="text-sm hover:opacity-75" href="/privacy" rel="noreferrer">
-              Privacy Statement
-            </a>
+            <button
+  type="button"
+  className="text-sm hover:opacity-75"
+  onClick={() => window.dispatchEvent(new Event("thw:open-privacy"))}
+>
+  Privacy Statement
+</button>
+
+
+
           </nav>
 
           {/* Mobile hamburger */}

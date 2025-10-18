@@ -4,6 +4,8 @@
 import React, { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { exportChatPdf } from "@/lib/exportPdf";  // ✅ must be here, not inside the component
+import PrivacyModal from "@/components/PrivacyModal"; //Privacy modal
+import Image from "next/image";
 
 
 
@@ -47,6 +49,9 @@ export default function Chat({ onExit }: { onExit?: () => void }) {
   const [isPending, startTransition] = useTransition();
   const abortRef = useRef<AbortController | null>(null);
 
+  const [privacyOpen, setPrivacyOpen] = React.useState(false);
+
+
   // Feedback state + visibility control
   const [feedback, setFeedback] = useState<null | "up" | "down">(null);
   const [feedbackVisible, setFeedbackVisible] = useState(false);
@@ -65,6 +70,23 @@ export default function Chat({ onExit }: { onExit?: () => void }) {
     }
   }, [autoShouldShow, feedbackVisible]);
 
+  useEffect(() => {
+  function onExport() { exportPDF(); }
+  function onReset() { handleResetChat(); }
+  function onEnd() { handleEndChat(); }
+
+  window.addEventListener("thw:export-pdf", onExport);
+  window.addEventListener("thw:reset-chat", onReset);
+  window.addEventListener("thw:end-chat", onEnd);
+
+  return () => {
+    window.removeEventListener("thw:export-pdf", onExport);
+    window.removeEventListener("thw:reset-chat", onReset);
+    window.removeEventListener("thw:end-chat", onEnd);
+  };
+}, []);
+
+
   async function send(prompt?: string) {
     const content = (prompt ?? value).trim();
     if (!content) return;
@@ -76,6 +98,7 @@ export default function Chat({ onExit }: { onExit?: () => void }) {
       setFeedbackVisible(false);
       setFeedbackSource(null);
     }
+
 
     const user: Msg = { id: uid(), role: "user", content };
     setMessages(m => [...m, user]);
@@ -117,6 +140,30 @@ async function exportPDF() {
     alert(`Export failed: ${e?.message || e}`);
   }
 }
+
+// --- Move existing button logic into handlers so the header can call them ---
+const handleResetChat = () => {
+  setMessages([
+    {
+      id: uid(),
+      role: "assistant",
+      content:
+        "Hi there 👋, welcome to Tortoise and Hare Wellness. I am here to support you. \n\n" +
+        "Would you like to tell me about about what brought you here today, or would you prefer me ask you some questions?\n\n" +
+        "Remember our chat is not monitored, recorded or stored. If you or someone you know is at risk of harm please ensure to call a help line like Beyond Blue or 000 in an emergency"
+    }
+  ]);
+  setFeedback(null);
+  setFeedbackVisible(false);
+  setFeedbackSource(null);
+  setValue("");
+};
+
+const handleEndChat = () => {
+  setFeedbackVisible(true);
+  setFeedbackSource("manual");
+};
+
 
   // ⬇️ record feedback; if source is "manual" (End chat), go back to the opening page after logging
   async function recordFeedback(rating: "up" | "down", source: "auto" | "manual") {
@@ -163,50 +210,10 @@ async function exportPDF() {
     "Did this chat help?";
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto" }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0" }}>
-        <h2 style={{ margin: 0, fontSize: 20 }}>Tortoise and Hare Wellness AI Chat</h2>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button type="button" onClick={exportPDF} style={btn("secondary")}>Export PDF</button>
-              {/* Reset Chat */}
-    <button
-      type="button"
-      onClick={() => {
-        setMessages([
-          {
-            id: uid(),
-            role: "assistant",
-            content:
-              "Hi there 👋, welcome to Tortoise and Hare Wellness. I am here to support you. \n\n" +
-              "Would you like to tell me about about what brought you here today, or would you prefer me ask you some questions?\n\n" +
-              "Remember our chat is not monitored, recorded or stored. If you or someone you know is at risk of harm please ensure to call a help line like Beyond Blue or 000 in an emergency"
-          }
-        ]);
-        setFeedback(null);
-        setFeedbackVisible(false);
-        setFeedbackSource(null);
-        setValue("");
-      }}
-      style={btn("secondary")}
-      title="Reset chat"
-    >
-      Reset chat
-    </button>
-          
-          <button
-            type="button"
-            onClick={() => {
-              setFeedbackVisible(true);
-              setFeedbackSource("manual");
-            }}
-            style={btn("secondary")}
-            title="End chat & show survey"
-          >
-            End chat
-          </button>
-        </div>
-      </div>
+      <>
+      <div className="mx-auto max-w-[900px] px-4 mt-8">
+
+
 
       {/* Mode bar (hidden/disabled during Mood protocol) */}
       <div style={{ opacity: moodActive ? 0.4 : 1, pointerEvents: moodActive ? "none" as const : "auto" }}>
@@ -274,8 +281,10 @@ async function exportPDF() {
       </form>
 
       <Hints summary={summary} onUse={(t) => setValue(t)} />
-    </div>
-  );
+        </div>
+  </>
+);
+
 }
 
 function btn(variant: "primary" | "secondary" = "primary") {
@@ -366,6 +375,9 @@ function TypingBubble() {
 function ModeBar({ onQuick }: { onQuick: (text: string) => void }) {
   return (
     <div style={{ marginBottom: 12 }}>
+      <h1 className="mt-6 mb-8 text-lg md:text-4xl font-semibold text-[#000000]">
+      Tortoise & Hare Wellness Coach
+    </h1>
       {/* Title for the quick action chips */}
       <div style={{ marginBottom: 6, fontWeight: 600, fontSize: 14, opacity: 0.8 }}>
         Conversation Starters: Select one to start your conversation or start typing.
