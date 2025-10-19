@@ -189,37 +189,39 @@ const surveyPrompt =
   feedbackSource === "auto" ? "Is this chat helping?" :
   "Did this chat help?";
 
-// ✅ SINGLE return starts here (replace everything down to the closing );
+// ✅ SINGLE return starts here
 return (
-  <div className="min-h-dvh bg-stone-50">
-    {/* Header */}
+  <div className="h-dvh bg-stone-50 grid grid-rows-[auto,1fr,auto] overflow-hidden">
+
+
+    {/* Header stays fixed; title above buttons */}
     <header className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b">
-      <div className="mx-auto max-w-screen-sm px-4 sm:px-6 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-center sm:text-left">
+      <div className="mx-auto max-w-screen-sm px-4 sm:px-6 py-3 flex flex-col gap-2 text-center sm:text-left">
         <h2 className="text-lg font-semibold">Tortoise & Hare Wellness AI Chat</h2>
-        <div className="grid grid-cols-3 gap-2 w-full sm:w-auto">
-          
-          {/* ✅ Export PDF button reads messages directly */}
+
+        {/* Equal-width buttons (3 across on all phones) */}
+        <div className="grid grid-cols-3 gap-2 w-full">
+          {/* Summary */}
           <ExportSummaryButton
+            className={headerBtn + " w-full"}
             messages={messages
               .filter(m => (m.content ?? "").trim().length > 0)
               .map(({ role, content }) => ({ role, content }))}
           />
-
-          {/* Reset Chat */}
+          {/* Reset */}
           <button
             type="button"
             onClick={handleResetChat}
-            className={headerBtn + " w-ful"}
+            className={headerBtn + " w-full"}
             title="Reset chat"
           >
             Reset
           </button>
-
-          {/* End Chat */}
+          {/* End */}
           <button
             type="button"
             onClick={handleEndChat}
-            className={headerBtn + " w-ful"}
+            className={headerBtn + " w-full"}
             title="End chat & show survey"
           >
             End
@@ -228,11 +230,13 @@ return (
       </div>
     </header>
 
-    {/* Main content area */}
-    <main className="mx-auto max-w-screen-sm px-4 sm:px-6 space-y-4 pb-[env(safe-area-inset-bottom)]">
+    {/* Scrollable content area only */}
+    <main className="mx-auto max-w-screen-sm px-4 sm:px-6 h-full flex flex-col gap-3 overflow-hidden pb-[calc(env(safe-area-inset-bottom,0px)+76px)]">
 
-      {/* Mode bar (hidden/disabled during Mood protocol) */}
-      <div style={{ opacity: moodActive ? 0.4 : 1, pointerEvents: moodActive ? "none" as const : "auto" }}>
+
+
+      {/* Conversation starter (dropdown) */}
+      <div style={{ opacity: moodActive ? 0.4 : 1, pointerEvents: moodActive ? ("none" as const) : ("auto" as const) }}>
         <ModeBar onQuick={send} />
       </div>
 
@@ -240,16 +244,24 @@ return (
       {moodActive && <ProtocolBanner qNumber={qNumber!} />}
 
       {/* Chat messages */}
-      <MessageList items={messages} pending={thinking} />
+      {/* Chat messages (this wrapper lets it fill remaining space and scroll) */}
+      <div className="flex-1 min-h-0">
+        <MessageList items={messages} pending={thinking} />
+      </div>
 
-      {/* Feedback survey (manual or auto), never during protocol or while thinking */}
+
+      {/* Feedback survey */}
       {feedbackVisible && !moodActive && !thinking && (
         <div style={{ marginTop: 20, textAlign: "center", opacity: 0.9 }}>
           {feedback === null ? (
             <>
-              <p style={{ marginBottom: 8 }}>{surveyPrompt}</p>
+              <p style={{ marginBottom: 8 }}>
+                {feedbackSource === "manual" ? "Did this chat help?" :
+                 feedbackSource === "auto"   ? "Is this chat helping?" :
+                 "Did this chat help?"}
+              </p>
               <button
-                onClick={() => recordFeedback("up", feedbackSource ?? "manual")}
+                onClick={() => recordFeedback("up",  feedbackSource ?? "manual")}
                 style={{ fontSize: 24, marginRight: 12, cursor: "pointer", background: "none", border: "none" }}
                 aria-label="Thumbs up"
                 title="Thumbs up"
@@ -273,73 +285,82 @@ return (
         </div>
       )}
 
-      {/* Sticky input */}
-      <form
-        onSubmit={(e) => { e.preventDefault(); send(); }}
-        style={{
-          display: "flex",
-          gap: 8,
-          marginTop: 12,
-          position: "sticky",
-          bottom: 0,
-          background: "#fff",
-          paddingBottom: 12,
-          minWidth: 0,
-        }}
-      >
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <textarea
-            placeholder={moodActive ? "Answer with 1, 2, 3, or 4…" : "Type your message…"}
-            value={value}
-            onChange={(e) => {
-              let v = e.target.value;
-              if (moodActive) v = v.replace(/[^1-4]/g, "").slice(0, 1);
-              setValue(v);
-
-              const el = e.currentTarget;
-              el.style.height = "auto";
-              const line = parseFloat(getComputedStyle(el).lineHeight || "24");
-              const maxH = line * 5;
-              el.style.height = Math.min(el.scrollHeight, maxH) + "px";
-              el.style.overflowY = el.scrollHeight > maxH ? "auto" : "hidden";
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                send();
-              }
-            }}
-            rows={1}
-            style={{
-              display: "block",
-              width: "100%",
-              boxSizing: "border-box",
-              minWidth: 0,
-              lineHeight: 1.5,
-              minHeight: 48,
-              padding: "12px 14px",
-              border: "1px solid #ddd",
-              borderRadius: 10,
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-word",
-              overflowWrap: "anywhere",
-              overflowX: "hidden",
-              resize: "none",
-              transition: "height 0.15s ease",
-            }}
-            aria-label="Message input"
-          />
-        </div>
-
-        <button disabled={thinking} style={btn()}>
-          {thinking ? "Thinking…" : "Send"}
-        </button>
-      </form>
-
       
+      
+
     </main>
+    
+
+{/* Footer: fixed to the bottom, centered to same max width */}
+<footer className="fixed bottom-0 left-0 right-0 bg-white border-t z-20">
+  <div className="mx-auto max-w-screen-sm px-4 sm:px-6 pt-2">
+    <form
+      onSubmit={(e) => { e.preventDefault(); send(); }}
+      style={{
+        display: "flex",
+        gap: 8,
+        background: "#fff",
+        paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)",
+        minWidth: 0,
+        boxSizing: "border-box",
+      }}
+    >
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <textarea
+        placeholder={moodActive ? "Answer with 1, 2, 3, or 4…" : "Type your message…"}
+        value={value}
+        onChange={(e) => {
+          let v = e.target.value;
+          if (moodActive) v = v.replace(/[^1-4]/g, "").slice(0, 1);
+          setValue(v);
+
+          // auto-grow (cap ~5 lines)
+          const el = e.currentTarget;
+          el.style.height = "auto";
+          const line = parseFloat(getComputedStyle(el).lineHeight || "24");
+          const maxH = line * 5;
+          el.style.height = Math.min(el.scrollHeight, maxH) + "px";
+          el.style.overflowY = el.scrollHeight > maxH ? "auto" : "hidden";
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            send();
+          }
+        }}
+        rows={1}
+        style={{
+          display: "block",
+          width: "100%",
+          boxSizing: "border-box",
+          minWidth: 0,
+          lineHeight: 1.4,
+          minHeight: 44,
+          padding: "12px 14px",
+          border: "1px solid #ddd",
+          borderRadius: 10,
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
+          overflowWrap: "anywhere",
+          overflowX: "hidden",
+          resize: "none",
+          transition: "height 0.15s ease",
+        }}
+        aria-label="Message input"
+      />
+    </div>
+
+    <button disabled={thinking} style={btn()}>
+        {thinking ? "Thinking…" : "Send"}
+      </button>
+    </form>
+  </div>
+</footer>
+
+
   </div>
 );
+
 
 }
 
@@ -363,15 +384,7 @@ function MessageList({ items, pending }: { items: Msg[]; pending: boolean }) {
   return (
     <div
       ref={ref}
-      style={{
-        border: "1px solid #eee",
-        padding: 12,
-        borderRadius: 12,
-        minHeight: 320,
-        maxHeight: 500,
-        overflowY: "auto",
-        background: "#fafafa"
-      }}
+      className="h-full overflow-y-auto border border-stone-200 rounded-2xl bg-white/70 p-3"
       aria-live="polite"
     >
       {items.map(m => (
@@ -381,6 +394,7 @@ function MessageList({ items, pending }: { items: Msg[]; pending: boolean }) {
     </div>
   );
 }
+
 
 function Bubble({ role, text }: { role: Role; text: string }) {
   const isUser = role === "user";

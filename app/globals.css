@@ -136,3 +136,8 @@
 .animate-slideUp {
   animation: slideUp 0.3s ease-out forwards;
 }
+
+html, body {
+  height: 100%;
+  overflow: hidden; /* page won't scroll; only the messages area can */
+}

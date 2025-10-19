@@ -42,22 +42,6 @@ export default function Page() {
               priority
             />
           </div>
-
-          <nav className="hidden md:flex items-center gap-6">
-
-            <button
-              className="text-sm hover:opacity-75"
-              onClick={() => window.dispatchEvent(new Event("thw:reset-chat"))}
-            >
-              Reset Chat
-            </button>
-            <button
-              className="text-sm hover:opacity-75"
-              onClick={() => window.dispatchEvent(new Event("thw:end-chat"))}
-            >
-              End Chat
-            </button>
-          </nav>
         </div>
       </header>
 
