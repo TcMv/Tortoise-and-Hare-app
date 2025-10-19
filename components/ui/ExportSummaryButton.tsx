@@ -65,9 +65,9 @@ export default function ExportSummaryButton({ messages }: { messages: ChatMessag
     <>
       <button
         onClick={handleOpen}
-        className="inline-flex items-center rounded-2xl px-4 py-2 shadow-sm bg-sky-500 hover:bg-sky-600 text-white disabled:opacity-60"
+        className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-800 hover:bg-stone-100 active:scale-[0.98] transition"
       >
-        Export Summary
+        Summary
       </button>
 
       <SummaryModal

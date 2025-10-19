@@ -12,6 +12,12 @@ function uid() {
   return Math.random().toString(36).slice(2);
 }
 
+// Reusable button style for header actions
+const headerBtn =
+  "rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-[15px] font-medium text-stone-800 " +
+  "hover:bg-stone-100 active:scale-[0.98] transition";
+
+
 // ---- Helpers for protocol detection (Mood Check-in) ----
 const Q_LINE = /^Q(\d{1,2}):\s/i;
 function getCurrentQuestionNumber(items: Msg[]) {
@@ -177,45 +183,53 @@ export default function Chat({
     }
   }
 
-  const surveyPrompt =
-    feedbackSource === "manual" ? "Did this chat help?" :
-    feedbackSource === "auto" ? "Is this chat helping?" :
-    "Did this chat help?";
+  // ...
+const surveyPrompt =
+  feedbackSource === "manual" ? "Did this chat help?" :
+  feedbackSource === "auto" ? "Is this chat helping?" :
+  "Did this chat help?";
 
-  return (
-    <div style={{ maxWidth: 900, margin: "0 auto" }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0" }}>
-        <h2 style={{ margin: 0, fontSize: 20 }}>Tortoise and Hare Wellness AI Chat</h2>
-        <div style={{ display: "flex", gap: 8 }}>
+// ✅ SINGLE return starts here (replace everything down to the closing );
+return (
+  <div className="min-h-dvh bg-stone-50">
+    {/* Header */}
+    <header className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b">
+      <div className="mx-auto max-w-screen-sm px-4 sm:px-6 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-center sm:text-left">
+        <h2 className="text-lg font-semibold">Tortoise & Hare Wellness AI Chat</h2>
+        <div className="grid grid-cols-3 gap-2 w-full sm:w-auto">
+          
           {/* ✅ Export PDF button reads messages directly */}
           <ExportSummaryButton
             messages={messages
-            .filter(m => (m.content ?? "").trim().length > 0)
-            .map(({ role, content }) => ({ role, content }))}
+              .filter(m => (m.content ?? "").trim().length > 0)
+              .map(({ role, content }) => ({ role, content }))}
           />
 
           {/* Reset Chat */}
           <button
             type="button"
             onClick={handleResetChat}
-            style={btn("secondary")}
+            className={headerBtn + " w-ful"}
             title="Reset chat"
           >
-            Reset chat
+            Reset
           </button>
 
           {/* End Chat */}
           <button
             type="button"
             onClick={handleEndChat}
-            style={btn("secondary")}
+            className={headerBtn + " w-ful"}
             title="End chat & show survey"
           >
-            End chat
+            End
           </button>
         </div>
       </div>
+    </header>
+
+    {/* Main content area */}
+    <main className="mx-auto max-w-screen-sm px-4 sm:px-6 space-y-4 pb-[env(safe-area-inset-bottom)]">
 
       {/* Mode bar (hidden/disabled during Mood protocol) */}
       <div style={{ opacity: moodActive ? 0.4 : 1, pointerEvents: moodActive ? "none" as const : "auto" }}>
@@ -225,6 +239,7 @@ export default function Chat({
       {/* Protocol banner + progress */}
       {moodActive && <ProtocolBanner qNumber={qNumber!} />}
 
+      {/* Chat messages */}
       <MessageList items={messages} pending={thinking} />
 
       {/* Feedback survey (manual or auto), never during protocol or while thinking */}
@@ -258,77 +273,74 @@ export default function Chat({
         </div>
       )}
 
+      {/* Sticky input */}
       <form
-  onSubmit={(e) => { e.preventDefault(); send(); }}
-  style={{
-    display: "flex",
-    gap: 8,
-    marginTop: 12,
-    position: "sticky",
-    bottom: 0,
-    background: "#fff",
-    paddingBottom: 12,
-    minWidth: 0, // 👈 allow children to shrink in flex
-  }}
->
-  <div style={{ flex: 1, minWidth: 0 }}> {/* 👈 important wrapper */}
-    <textarea
-      placeholder={moodActive ? "Answer with 1, 2, 3, or 4…" : "Type your message…"}
-      value={value}
-      onChange={(e) => {
-        let v = e.target.value;
-        if (moodActive) v = v.replace(/[^1-4]/g, "").slice(0, 1); // mimic pattern+maxLength
-        setValue(v);
+        onSubmit={(e) => { e.preventDefault(); send(); }}
+        style={{
+          display: "flex",
+          gap: 8,
+          marginTop: 12,
+          position: "sticky",
+          bottom: 0,
+          background: "#fff",
+          paddingBottom: 12,
+          minWidth: 0,
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <textarea
+            placeholder={moodActive ? "Answer with 1, 2, 3, or 4…" : "Type your message…"}
+            value={value}
+            onChange={(e) => {
+              let v = e.target.value;
+              if (moodActive) v = v.replace(/[^1-4]/g, "").slice(0, 1);
+              setValue(v);
 
-        // auto-grow (cap ~5 lines)
-        const el = e.currentTarget;
-        el.style.height = "auto";
-        const line = parseFloat(getComputedStyle(el).lineHeight || "24");
-        const maxH = line * 5;
-        el.style.height = Math.min(el.scrollHeight, maxH) + "px";
-        el.style.overflowY = el.scrollHeight > maxH ? "auto" : "hidden";
-      }}
-      onKeyDown={(e) => {
-        // Enter = send, Shift+Enter = newline
-        if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          send();
-        }
-      }}
-      rows={1}
-      style={{
-        display: "block",
-        width: "100%",
-        boxSizing: "border-box",
-        minWidth: 0,
-        lineHeight: 1.5,
-        minHeight: 48,
-        padding: "12px 14px",
-        border: "1px solid #ddd",
-        borderRadius: 10,
+              const el = e.currentTarget;
+              el.style.height = "auto";
+              const line = parseFloat(getComputedStyle(el).lineHeight || "24");
+              const maxH = line * 5;
+              el.style.height = Math.min(el.scrollHeight, maxH) + "px";
+              el.style.overflowY = el.scrollHeight > maxH ? "auto" : "hidden";
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                send();
+              }
+            }}
+            rows={1}
+            style={{
+              display: "block",
+              width: "100%",
+              boxSizing: "border-box",
+              minWidth: 0,
+              lineHeight: 1.5,
+              minHeight: 48,
+              padding: "12px 14px",
+              border: "1px solid #ddd",
+              borderRadius: 10,
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
+              overflowWrap: "anywhere",
+              overflowX: "hidden",
+              resize: "none",
+              transition: "height 0.15s ease",
+            }}
+            aria-label="Message input"
+          />
+        </div>
 
-        // wrap + no sideways scroll
-        whiteSpace: "pre-wrap",
-        wordBreak: "break-word",
-        overflowWrap: "anywhere",
-        overflowX: "hidden",
-        resize: "none",
-        transition: "height 0.15s ease",
+        <button disabled={thinking} style={btn()}>
+          {thinking ? "Thinking…" : "Send"}
+        </button>
+      </form>
 
-      }}
-      aria-label="Message input"
-    />
+      
+    </main>
   </div>
+);
 
-  <button disabled={thinking} style={btn()}>
-    {thinking ? "Thinking…" : "Send"}
-  </button>
-</form>
-
-
-      <Hints summary={summary} onUse={(t) => setValue(t)} />
-    </div>
-  );
 }
 
 function btn(variant: "primary" | "secondary" = "primary") {
@@ -417,35 +429,41 @@ function TypingBubble() {
 }
 
 function ModeBar({ onQuick }: { onQuick: (text: string) => void }) {
+  const starters = [
+    { label: "Lately I’ve been feeling…", value: "I'd like to talk about what I have been feeling." },
+    { label: "Mood check-in", value: "Hi, please begin a brief mood check-in now. Ask one question at a time (11 items). Start with the first question." },
+    { label: "Mindfulness pause", value: "Yes, please guide a gentle 1-minute breathing pause now, step by step. Then ask how I feel." },
+    { label: "Help me set a goal", value: "I would like assistance setting a goal. Please ask me a couple of questions to understand and help me set a goal" },
+  ];
+
+  function handleSelect(e: React.ChangeEvent<HTMLSelectElement>) {
+    const v = e.target.value;
+    if (!v) return;
+    onQuick(v);
+    e.target.value = ""; // reset back to placeholder
+  }
+
   return (
-    <div style={{ marginBottom: 12 }}>
-      <div style={{ marginBottom: 6, fontWeight: 600, fontSize: 14, opacity: 0.8 }}>
-        Conversation Starters: Select one to start your conversation or start typing.
+    <div className="space-y-2">
+      <div className="text-sm font-semibold text-stone-700/80">
+        Conversation starter
       </div>
 
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-        <QuickChip
-          className="pill"
-          label="Lately I've been feeling..."
-          onClick={() => onQuick("I'd like to talk about what I have been feeling.")}
-        />
-
-        <QuickChip
-          label="Mood check-in"
-          onClick={() => onQuick("Hi, please begin a brief mood check-in now. Ask one question at a time (11 items). Start with the first question.")}
-        />
-        <QuickChip
-          label="Mindfulness pause"
-          onClick={() => onQuick("Yes, please guide a gentle 1-minute breathing pause now, step by step. Then ask how I feel.")}
-        />
-        <QuickChip
-          label="Help me set a goal"
-          onClick={() => onQuick("I would like assistance setting a goal. Please ask me a couple of questions to understand and help me set a goal")}
-        />
-      </div>
+      <select
+        onChange={handleSelect}
+        defaultValue=""
+        className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-[15px] leading-6 focus:outline-none focus:ring-2 focus:ring-blue-200"
+        aria-label="Conversation starter"
+      >
+        <option value="" disabled>Choose a starter…</option>
+        {starters.map(s => (
+          <option key={s.label} value={s.value}>{s.label}</option>
+        ))}
+      </select>
     </div>
   );
 }
+
 
 type QuickChipProps = { label: string; onClick?: () => void; className?: string; };
 function QuickChip({ label, onClick, className }: QuickChipProps) {
@@ -480,17 +498,34 @@ function ProtocolBanner({ qNumber }: { qNumber: number }) {
   );
 }
 
-function Hints({ summary, onUse }: { summary: { issue: string; shortTerm: string; longTerm: string }; onUse: (t: string) => void }) {
-  const hints: string[] = [];
-  if (!summary.issue) hints.push("Lately I have been feeling...");
-  if (!summary.shortTerm) hints.push("I'd like some guidance on...");
-  if (!summary.longTerm) hints.push("Can I talk about...");
+//function Hints({
+  //summary,
+  //onUse
+//}: {
+  //summary: { issue: string; shortTerm: string; longTerm: string };
+  //onUse: (t: string) => void;
+//}) {
+  //const hints: string[] = [];
+  //if (!summary.issue) hints.push("Lately I have been feeling...");
+  //if (!summary.shortTerm) hints.push("I'd like some guidance on...");
+  //if (!summary.longTerm) hints.push("Can I talk about...");
 
-  if (!hints.length) return null;
-  return (
-    <div style={{ marginTop: 16, fontSize: 13, opacity: 0.7 }}>
-      <div style={{ marginBottom: 4 }}>"Remember our chat is not monitored, recorded or stored. If you or someone you know is at risk of harm please ensure to call a help line like Lifeline 13 11 14 or in an emergency call 000 (Australia). For other regions, contact your local emergency number.</div>
-      
-    </div>
-  );
-}
+  //if (!hints.length) return null;
+
+  //return (
+    //<div style={{ marginTop: 16, fontSize: 13, opacity: 0.7 }}>
+      //<div style={{ marginBottom: 4 }}>
+        //"Powered by Tortoise & Hare Wellness"
+      //</div>
+      //{/* If you later want clickable hints: */}
+      //{/* <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+        //{hints.map(h => (
+          //<button key={h} onClick={() => onUse(h)} style={{ border:'1px solid #ddd', borderRadius:999, padding:'6px 10px', background:'#fff' }}>
+            //{h}
+          //</button>
+        //))}
+      //</div> */}
+    //</div>
+  //);
+//}
+
