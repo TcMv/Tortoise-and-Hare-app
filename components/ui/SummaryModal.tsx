@@ -93,7 +93,8 @@ export default function SummaryModal({
       doc.setFont("helvetica", "normal");
       doc.setFontSize(12);
       doc.setTextColor("#475569");
-      const lines = doc.splitTextToSize((text || "—").trim(), pageW - M * 2);
+      // Break the text into lines that fit within the page margins
+      const lines: string[] = doc.splitTextToSize(text, pageW - 2 * M);
 
       // simple page-break check
       const needed = lines.length * LINE + SECTION_GAP + 8 + 8;
@@ -102,7 +103,10 @@ export default function SummaryModal({
         y = M;
       }
 
-      lines.forEach((ln) => { doc.text(ln, M, y); y += LINE; });
+      (lines as string[]).forEach((ln: string) => {
+        doc.text(ln, M, y);
+        y += LINE;
+        });
 
       // light divider and breathing room
       y += 8;
