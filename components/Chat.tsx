@@ -202,12 +202,14 @@ return (
         {/* Equal-width buttons (3 across on all phones) */}
         <div className="grid grid-cols-3 gap-2 w-full">
           {/* Summary */}
-          <ExportSummaryButton
-            className={headerBtn + " w-full"}
-            messages={messages
-              .filter(m => (m.content ?? "").trim().length > 0)
-              .map(({ role, content }) => ({ role, content }))}
-          />
+          <div className="w-full">
+  <ExportSummaryButton
+    messages={messages
+      .filter(m => (m.content ?? "").trim().length > 0)
+      .map(({ role, content }) => ({ role, content }))}
+  />
+</div>
+
           {/* Reset */}
           <button
             type="button"
