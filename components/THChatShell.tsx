@@ -5,9 +5,10 @@ import { motion } from "framer-motion";
 import { Menu, Sparkles, Send, Settings, Bot, User, Sun, Moon, Leaf, ChevronRight, ChevronLeft, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
+import { AutoTextarea } from "@/components/ui/auto-textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
+import Chat from "@/components/Chat";
 
 /**
  * Tortoise & Hare Reset — Chat Shell (Brand-colour edition)
@@ -117,71 +118,15 @@ export default function THChatShell() {
           </motion.aside>
         )}
 
-        {/* Chat Column */}
-        <section className={`${sidebarOpen && toolsOpen ? "md:col-span-6 lg:col-span-8" : sidebarOpen || toolsOpen ? "md:col-span-9 lg:col-span-10" : "md:col-span-12"}`}>
-          <Card className="rounded-2xl shadow-sm border-white/20 dark:border-white/10 bg-white/80 dark:bg-slate-900/60 backdrop-blur">
-            <CardHeader className="pb-0">
-              <CardTitle className="text-base">Session</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="flex flex-col h-[65vh]">
-                <ScrollArea className="flex-1 pr-2">
-                  <div className="space-y-4">
-                    {mockMessages.map((m) => (
-                      <motion.div key={m.id} initial={{opacity:0, y:6}} animate={{opacity:1, y:0}} transition={{duration:0.25}} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                        <div
-                          className={`max-w-[85%] md:max-w-[70%] rounded-2xl px-4 py-3 shadow-sm border text-sm leading-relaxed backdrop-blur relative group
-                            ${m.role === "user"
-                              ? "bg-brand-blue text-white border-brand-blue/70"
-                              : "bg-white/70 text-slate-800 dark:bg-slate-900/60 dark:text-slate-100 border-white/20 dark:border-white/10"}
-                          `}
-                        >
-                          <div className="flex items-center gap-2 mb-1 opacity-80">
-                            {m.role === "user" ? <User className="h-3.5 w-3.5"/> : <Bot className="h-3.5 w-3.5"/>}
-                            <span className="text-[10px] uppercase tracking-widest">{m.role}</span>
-                          </div>
-                          <p>{m.content}</p>
-                          {/* Subtle completion glow (engagement loop) */}
-                          {m.id === 1 && (
-                            <motion.div
-                              initial={{opacity: 0}}
-                              animate={{opacity: 1}}
-                              transition={{delay: 0.4, duration: 0.6}}
-                              className="absolute -left-2 -top-2 hidden group-hover:flex items-center gap-1 rounded-full bg-brand-green text-white px-2 py-0.5 shadow"
-                            >
-                              <CheckCircle2 className="h-3.5 w-3.5"/>
-                              <span className="text-[10px]">tip</span>
-                            </motion.div>
-                          )}
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </ScrollArea>
+        <Card className="rounded-2xl shadow-sm border-white/20 dark:border-white/10 bg-white/80 dark:bg-slate-900/60 backdrop-blur">
+  <CardHeader className="pb-0">
+    <CardTitle className="text-base">Session</CardTitle>
+  </CardHeader>
+  <CardContent className="pt-4 min-w-0">
+    <Chat />
+  </CardContent>
+</Card>
 
-                {/* Composer */}
-                <div className="mt-4">
-                  <div className="rounded-2xl border border-white/20 dark:border-white/10 bg-white/80 dark:bg-slate-900/60 shadow-sm p-2">
-                    <Textarea placeholder="Type your message…" className="min-h-[48px] resize-none border-0 bg-transparent focus-visible:ring-0" rows={2} />
-                    <div className="flex items-center justify-between px-1 pb-1">
-                      <div className="flex items-center gap-2">
-                        <Button size="sm" variant="ghost" className="rounded-xl hover:bg-brand-lavender/10">
-                          <Sparkles className="h-4 w-4"/> Nudge
-                        </Button>
-                        <Button size="sm" variant="ghost" className="rounded-xl hover:bg-brand-green/10">
-                          <Leaf className="h-4 w-4"/> Mindfulness
-                        </Button>
-                      </div>
-                      <Button className="rounded-xl bg-brand-blue hover:opacity-95 text-white" size="sm">
-                        <Send className="h-4 w-4 mr-1"/> Send
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
 
         {/* Right Tools */}
         {toolsOpen && (
@@ -240,6 +185,33 @@ export default function THChatShell() {
           </Button>
         </div>
       </div>
+
+      <div style={{ padding: 12, border: "1px dashed #999", margin: 12 }}>
+        <textarea
+            placeholder="Sanity test: this MUST wrap and grow."
+            rows={1}
+            onInput={(e) => {
+                const el = e.currentTarget;
+                el.style.height = "auto";
+                el.style.height = Math.min(el.scrollHeight, 120) + "px";
+            }}
+            style={{
+                display: "block",
+                width: "100%",
+                maxWidth: "100%",
+                minWidth: 0,
+                lineHeight: "1.5",
+                minHeight: 48,
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+                overflowWrap: "anywhere",
+                overflowX: "hidden",
+                resize: "none",
+            }}
+        />
+      </div>
+
     </div>
   );
 }
+

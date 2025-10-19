@@ -75,6 +75,12 @@
     @apply w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-slate-800 
            shadow-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--th-emerald)]/40;
   }
+
+  textarea {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
   .dark .thw-chat input[type="text"],
   .dark .thw-chat input[type="search"],
   .dark .thw-chat textarea {

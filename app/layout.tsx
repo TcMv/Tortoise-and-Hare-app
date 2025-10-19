@@ -5,9 +5,10 @@ import ClientPrivacyHost from "@/components/ClientPrivacyHost";
 export const metadata: Metadata = {
   title: "Tortoise & Hare Wellness App",
   description: "Your personal AI wellness coach for instant advice and long-term growth.",
-  icons: {
-    icon: "/tortoise-hare-logo-favicon.png",
-  }
+  icons: [
+  { rel: "icon", url: "/tortoise-hare-logo-favicon.png" },
+  { rel: "shortcut icon", url: "/tortoise-hare-logo-favicon.png" },
+],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
