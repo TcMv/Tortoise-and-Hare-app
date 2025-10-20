@@ -84,53 +84,53 @@ export default function Chat({
   }, [autoShouldShow, feedbackVisible]);
 
   async function send(prompt?: string) {
-  const content = (prompt ?? value).trim();
-  if (!content) return;
-  setValue("");
+    const content = (prompt ?? value).trim();
+    if (!content) return;
+    setValue("");
 
-  if (feedback !== null) {
-    setFeedback(null);
-    setFeedbackVisible(false);
-    setFeedbackSource(null);
-  }
-
-  const user: Msg = { id: uid(), role: "user", content };
-  setMessages(m => [...m, user]);
-
-  abortRef.current?.abort();
-  const controller = new AbortController();
-  abortRef.current = controller;
-
-  setThinking(true);
-  try {
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        messages: [...messages, user].map(({ role, content }) => ({ role, content }))
-      }),
-      signal: controller.signal,
-      cache: "no-store",
-    });
-
-    if (!res.ok) {
-      const txt = await res.text().catch(() => "");
-      throw new Error(txt || `HTTP ${res.status}`);
+    if (feedback !== null) {
+      setFeedback(null);
+      setFeedbackVisible(false);
+      setFeedbackSource(null);
     }
 
-    const data = await res.json() as { reply: string };
-    setMessages(m => [...m, { id: uid(), role: "assistant", content: data.reply }]);
-  } catch (e: any) {
-    if (e?.name !== "AbortError") {
-      setMessages(m => [...m, { id: uid(), role: "assistant", content: "Sorry, I couldn’t reach the AI just now. Try again." }]);
-    }
-  } finally {
-    abortRef.current = null;
-    setThinking(false);
-  }
-}
+    const user: Msg = { id: uid(), role: "user", content };
+    setMessages(m => [...m, user]);
 
-  
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setThinking(true);
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [...messages, user].map(({ role, content }) => ({ role, content }))
+        }),
+        signal: controller.signal,
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        throw new Error(txt || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json() as { reply: string };
+      setMessages(m => [...m, { id: uid(), role: "assistant", content: data.reply }]);
+    } catch (e: any) {
+      if (e?.name !== "AbortError") {
+        setMessages(m => [...m, { id: uid(), role: "assistant", content: "Sorry, I couldn’t reach the AI just now. Try again." }]);
+      }
+    } finally {
+      abortRef.current = null;
+      setThinking(false);
+    }
+  }
+
+
 
 
   // Reset / End handlers
@@ -174,7 +174,7 @@ export default function Chat({
       // non-blocking
     } finally {
       if (source === "manual") {
-        try { localStorage.removeItem("th_chat_state"); } catch {}
+        try { localStorage.removeItem("th_chat_state"); } catch { }
         setMessages([{ id: uid(), role: "assistant", content: "Thanks for your time today. See you next session. 💙" }]);
         setFeedbackVisible(false);
         if (typeof onExit === "function") onExit();
@@ -183,187 +183,155 @@ export default function Chat({
     }
   }
 
-  // ...
-const surveyPrompt =
-  feedbackSource === "manual" ? "Did this chat help?" :
-  feedbackSource === "auto" ? "Is this chat helping?" :
-  "Did this chat help?";
+  const surveyPrompt =
+    feedbackSource === "manual" ? "Did this chat help?" :
+      feedbackSource === "auto" ? "Is this chat helping?" :
+        "Did this chat help?";
 
-// ✅ SINGLE return starts here
-return (
-  <div className="h-dvh bg-stone-50 grid grid-rows-[auto,1fr,auto] overflow-hidden">
+  
+  return (
+    <div className="h-dvh bg-stone-50 grid grid-rows-[auto,1fr] overflow-hidden">
+
+      {/* HEADER (title + three buttons) */}
+      <header className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b">
+        <div className="mx-auto max-w-screen-sm px-4 sm:px-6 py-3">
+          <h2 className="text-lg font-semibold text-center sm:text-left">
+            Tortoise & Hare Wellness AI Chat
+          </h2>
+
+          {/* 3 equal buttons, consistent sizing */}
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            <div className="w-full">
+              <ExportSummaryButton
+                messages={messages
+                  .filter(m => (m.content ?? "").trim().length > 0)
+                  .map(({ role, content }) => ({ role, content }))}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handleResetChat}
+              className="rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-[15px] font-medium text-stone-800 hover:bg-stone-100 active:scale-[0.98] transition"
+              title="Reset chat"
+            >
+              Reset
+            </button>
+            <button
+              type="button"
+              onClick={handleEndChat}
+              className="rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-[15px] font-medium text-stone-800 hover:bg-stone-100 active:scale-[0.98] transition"
+              title="End chat & show survey"
+            >
+              End
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* MAIN – only the messages area scrolls; we pad bottom so fixed footer never overlaps */}
+      <main className="relative">
+        <div className="mx-auto max-w-screen-sm h-full px-4 sm:px-6">
+          <div className="h-full pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+72px)] flex flex-col gap-3 overflow-hidden">
 
 
-    {/* Header stays fixed; title above buttons */}
-    <header className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b">
-      <div className="mx-auto max-w-screen-sm px-4 sm:px-6 py-3 flex flex-col gap-2 text-center sm:text-left">
-        <h2 className="text-lg font-semibold">Tortoise & Hare Wellness AI Chat</h2>
+            {/* Conversation starter (disabled during protocol) */}
+            <div style={{ opacity: moodActive ? 0.4 : 1, pointerEvents: moodActive ? "none" : "auto" }}>
+              <ModeBar onQuick={send} />
+            </div>
 
-        {/* Equal-width buttons (3 across on all phones) */}
-        <div className="grid grid-cols-3 gap-2 w-full">
-          {/* Summary */}
-          <div className="w-full">
-  <ExportSummaryButton
-    messages={messages
-      .filter(m => (m.content ?? "").trim().length > 0)
-      .map(({ role, content }) => ({ role, content }))}
-  />
+            {/* Protocol banner */}
+            {moodActive && <ProtocolBanner qNumber={qNumber!} />}
+
+            {/* Messages — fills remaining height and scrolls like a chat app */}
+            <div className="flex-1 min-h-0">
+              <MessageList items={messages} pending={thinking} />
+            </div>
+
+            {/* Optional feedback section (non-blocking) */}
+            {feedbackVisible && !moodActive && !thinking && (
+              <div className="text-center opacity-90">
+                {feedback === null ? (
+                  <>
+                    <p className="mb-2">
+                      {feedbackSource === "manual" ? "Did this chat help?" :
+                        feedbackSource === "auto" ? "Is this chat helping?" :
+                          "Did this chat help?"}
+                    </p>
+                    <button
+                      onClick={() => recordFeedback("up", feedbackSource ?? "manual")}
+                      className="text-2xl mr-3"
+                      aria-label="Thumbs up"
+                      title="Thumbs up"
+                    >👍</button>
+                    <button
+                      onClick={() => recordFeedback("down", feedbackSource ?? "manual")}
+                      className="text-2xl"
+                      aria-label="Thumbs down"
+                      title="Thumbs down"
+                    >👎</button>
+                  </>
+                ) : (
+                  <p className="mb-2">
+                    {feedback === "up" ? "Thanks for your feedback 💙" : "Thanks — we’ll keep improving 💡"}
+                  </p>
+                )}
+              </div>
+
+            )}
+
+          </div>
+        </div>
+
+        {/* AFTER (white only under the chat width) */}
+        <div className="fixed inset-x-0 bottom-0 z-30 pointer-events-none">
+  <div className="mx-auto max-w-screen-sm px-4 sm:px-6">
+    <div className="pointer-events-auto rounded-t-2xl border-t bg-white/95 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+8px)]">
+      <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex gap-2 px-0">
+        <div className="flex-1 min-w-0">
+          <textarea
+            placeholder={moodActive ? "Answer with 1, 2, 3, or 4…" : "Type your message…"}
+            value={value}
+            onChange={(e) => {
+              let v = e.target.value;
+              if (moodActive) v = v.replace(/[^1-4]/g, "").slice(0, 1);
+              setValue(v);
+              // auto-grow up to ~5 lines
+              const el = e.currentTarget;
+              el.style.height = "auto";
+              const line = parseFloat(getComputedStyle(el).lineHeight || "22");
+              const maxH = line * 5;
+              el.style.height = Math.min(el.scrollHeight, maxH) + "px";
+              el.style.overflowY = el.scrollHeight > maxH ? "auto" : "hidden";
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                send();
+              }
+            }}
+            rows={1}
+            className="block w-full box-border leading-6 min-h-[44px] max-h-40 px-3 py-2 rounded-xl border border-stone-300 bg-white resize-none overflow-x-hidden appearance-none shadow-none focus:shadow-none focus:outline-none focus:ring-0"
+            aria-label="Message input"
+          />
+        </div>
+
+        <button
+          disabled={thinking}
+          className="rounded-xl bg-stone-900 text-white px-4 py-2 font-medium disabled:opacity-50"
+        >
+          {thinking ? "Thinking…" : "Send"}
+        </button>
+      </form>
+    </div>
+  </div>
 </div>
 
-          {/* Reset */}
-          <button
-            type="button"
-            onClick={handleResetChat}
-            className={headerBtn + " w-full"}
-            title="Reset chat"
-          >
-            Reset
-          </button>
-          {/* End */}
-          <button
-            type="button"
-            onClick={handleEndChat}
-            className={headerBtn + " w-full"}
-            title="End chat & show survey"
-          >
-            End
-          </button>
-        </div>
-      </div>
-    </header>
-
-    {/* Scrollable content area only */}
-    <main className="mx-auto max-w-screen-sm px-4 sm:px-6 h-full flex flex-col gap-3 overflow-hidden pb-[calc(env(safe-area-inset-bottom,0px)+76px)]">
 
 
 
-      {/* Conversation starter (dropdown) */}
-      <div style={{ opacity: moodActive ? 0.4 : 1, pointerEvents: moodActive ? ("none" as const) : ("auto" as const) }}>
-        <ModeBar onQuick={send} />
-      </div>
-
-      {/* Protocol banner + progress */}
-      {moodActive && <ProtocolBanner qNumber={qNumber!} />}
-
-      {/* Chat messages */}
-      {/* Chat messages (this wrapper lets it fill remaining space and scroll) */}
-      <div className="flex-1 min-h-0">
-        <MessageList items={messages} pending={thinking} />
-      </div>
-
-
-      {/* Feedback survey */}
-      {feedbackVisible && !moodActive && !thinking && (
-        <div style={{ marginTop: 20, textAlign: "center", opacity: 0.9 }}>
-          {feedback === null ? (
-            <>
-              <p style={{ marginBottom: 8 }}>
-                {feedbackSource === "manual" ? "Did this chat help?" :
-                 feedbackSource === "auto"   ? "Is this chat helping?" :
-                 "Did this chat help?"}
-              </p>
-              <button
-                onClick={() => recordFeedback("up",  feedbackSource ?? "manual")}
-                style={{ fontSize: 24, marginRight: 12, cursor: "pointer", background: "none", border: "none" }}
-                aria-label="Thumbs up"
-                title="Thumbs up"
-              >
-                👍
-              </button>
-              <button
-                onClick={() => recordFeedback("down", feedbackSource ?? "manual")}
-                style={{ fontSize: 24, cursor: "pointer", background: "none", border: "none" }}
-                aria-label="Thumbs down"
-                title="Thumbs down"
-              >
-                👎
-              </button>
-            </>
-          ) : (
-            <p style={{ marginBottom: 8 }}>
-              {feedback === "up" ? "Thanks for your feedback 💙" : "Thanks — we’ll keep improving 💡"}
-            </p>
-          )}
-        </div>
-      )}
-
-      
-      
-
-    </main>
-    
-
-{/* Footer: fixed to the bottom, centered to same max width */}
-<footer className="fixed bottom-0 left-0 right-0 bg-white border-t z-20">
-  <div className="mx-auto max-w-screen-sm px-4 sm:px-6 pt-2">
-    <form
-      onSubmit={(e) => { e.preventDefault(); send(); }}
-      style={{
-        display: "flex",
-        gap: 8,
-        background: "#fff",
-        paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)",
-        minWidth: 0,
-        boxSizing: "border-box",
-      }}
-    >
-    <div style={{ flex: 1, minWidth: 0 }}>
-      <textarea
-        placeholder={moodActive ? "Answer with 1, 2, 3, or 4…" : "Type your message…"}
-        value={value}
-        onChange={(e) => {
-          let v = e.target.value;
-          if (moodActive) v = v.replace(/[^1-4]/g, "").slice(0, 1);
-          setValue(v);
-
-          // auto-grow (cap ~5 lines)
-          const el = e.currentTarget;
-          el.style.height = "auto";
-          const line = parseFloat(getComputedStyle(el).lineHeight || "24");
-          const maxH = line * 5;
-          el.style.height = Math.min(el.scrollHeight, maxH) + "px";
-          el.style.overflowY = el.scrollHeight > maxH ? "auto" : "hidden";
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            send();
-          }
-        }}
-        rows={1}
-        style={{
-          display: "block",
-          width: "100%",
-          boxSizing: "border-box",
-          minWidth: 0,
-          lineHeight: 1.4,
-          minHeight: 44,
-          padding: "12px 14px",
-          border: "1px solid #ddd",
-          borderRadius: 10,
-          whiteSpace: "pre-wrap",
-          wordBreak: "break-word",
-          overflowWrap: "anywhere",
-          overflowX: "hidden",
-          resize: "none",
-          transition: "height 0.15s ease",
-        }}
-        aria-label="Message input"
-      />
+      </main>
     </div>
-
-    <button disabled={thinking} style={btn()}>
-        {thinking ? "Thinking…" : "Send"}
-      </button>
-    </form>
-  </div>
-</footer>
-
-
-  </div>
-);
-
-
+  );
 }
 
 function btn(variant: "primary" | "secondary" = "primary") {
@@ -379,6 +347,7 @@ function btn(variant: "primary" | "secondary" = "primary") {
 
 function MessageList({ items, pending }: { items: Msg[]; pending: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     ref.current?.scrollTo({ top: ref.current.scrollHeight, behavior: "smooth" });
   }, [items.length, pending]);
@@ -386,16 +355,15 @@ function MessageList({ items, pending }: { items: Msg[]; pending: boolean }) {
   return (
     <div
       ref={ref}
-      className="h-full overflow-y-auto border border-stone-200 rounded-2xl bg-white/70 p-3"
+      className="h-full overflow-y-auto space-y-2 px-1"
       aria-live="polite"
     >
-      {items.map(m => (
-        <Bubble key={m.id} role={m.role} text={m.content} />
-      ))}
+      {items.map(m => <Bubble key={m.id} role={m.role} text={m.content} />)}
       {pending && <TypingBubble />}
     </div>
   );
 }
+
 
 
 function Bubble({ role, text }: { role: Role; text: string }) {
@@ -515,33 +483,33 @@ function ProtocolBanner({ qNumber }: { qNumber: number }) {
 }
 
 //function Hints({
-  //summary,
-  //onUse
+//summary,
+//onUse
 //}: {
-  //summary: { issue: string; shortTerm: string; longTerm: string };
-  //onUse: (t: string) => void;
+//summary: { issue: string; shortTerm: string; longTerm: string };
+//onUse: (t: string) => void;
 //}) {
-  //const hints: string[] = [];
-  //if (!summary.issue) hints.push("Lately I have been feeling...");
-  //if (!summary.shortTerm) hints.push("I'd like some guidance on...");
-  //if (!summary.longTerm) hints.push("Can I talk about...");
+//const hints: string[] = [];
+//if (!summary.issue) hints.push("Lately I have been feeling...");
+//if (!summary.shortTerm) hints.push("I'd like some guidance on...");
+//if (!summary.longTerm) hints.push("Can I talk about...");
 
-  //if (!hints.length) return null;
+//if (!hints.length) return null;
 
-  //return (
-    //<div style={{ marginTop: 16, fontSize: 13, opacity: 0.7 }}>
-      //<div style={{ marginBottom: 4 }}>
-        //"Powered by Tortoise & Hare Wellness"
-      //</div>
-      //{/* If you later want clickable hints: */}
-      //{/* <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-        //{hints.map(h => (
-          //<button key={h} onClick={() => onUse(h)} style={{ border:'1px solid #ddd', borderRadius:999, padding:'6px 10px', background:'#fff' }}>
-            //{h}
-          //</button>
-        //))}
-      //</div> */}
-    //</div>
-  //);
+//return (
+//<div style={{ marginTop: 16, fontSize: 13, opacity: 0.7 }}>
+//<div style={{ marginBottom: 4 }}>
+//"Powered by Tortoise & Hare Wellness"
+//</div>
+//{/* If you later want clickable hints: */}
+//{/* <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+//{hints.map(h => (
+//<button key={h} onClick={() => onUse(h)} style={{ border:'1px solid #ddd', borderRadius:999, padding:'6px 10px', background:'#fff' }}>
+//{h}
+//</button>
+//))}
+//</div> */}
+//</div>
+//);
 //}
 

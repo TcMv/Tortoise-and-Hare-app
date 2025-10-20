@@ -141,3 +141,6 @@ html, body {
   height: 100%;
   overflow: hidden; /* page won't scroll; only the messages area can */
 }
+
+/* Prevent the whole page from bouncing; only the messages list scrolls */
+body { overscroll-behavior-y: none; }
