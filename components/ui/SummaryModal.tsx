@@ -129,15 +129,17 @@ export default function SummaryModal({
     const content = (
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-            + <div className="relative z-10 w-full max-w-[min(92vw,38rem)] sm:max-w-xl rounded-2xl bg-white shadow-lg p-4 sm:p-6 max-h-[85vh] flex flex-col">
-                <div className="flex items-center justify-between mb-2">
+            <div className="relative z-10 w-screen h-[100svh] max-w-none rounded-none  /* mobile = full screen */ bg-white shadow-lg p-4 sm:p-6 sm:w-full sm:max-w-xl sm:h-auto sm:max-h-[85vh] sm:rounded-2xl flex flex-col">
+
+
+                <div className="flex items-center justify-between pb-2 border-b flex-shrink-0 sticky top-0 bg-white">
                     <h3 className="text-lg font-semibold">Chat Summary</h3>
                     <button onClick={onClose} className="rounded-md px-2 py-1 border text-sm hover:bg-gray-50">
                         Close
                     </button>
                 </div>
 
-                <div className="flex-1 min-h-0 overflow-y-auto mt-2 pr-1 -mr-1">
+                <div className="flex-1 min-h-0 overflow-y-auto mt-2 pr-2 overscroll-contain [-webkit-overflow-scrolling:touch]">
                     {loading && <p className="text-sm text-gray-600">Generating summary…</p>}
 
                     {!loading && error && (
@@ -162,6 +164,7 @@ export default function SummaryModal({
                         </div>
                     )}
                 </div>
+
 
             </div>
         </div>
