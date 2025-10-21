@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Menu, Sparkles, Send, Settings, Bot, User, Sun, Moon, Leaf, ChevronRight, ChevronLeft, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AutoTextarea } from "@/components/ui/auto-textarea";
+
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 
