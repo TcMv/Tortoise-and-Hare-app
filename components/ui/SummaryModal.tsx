@@ -129,7 +129,7 @@ export default function SummaryModal({
     const content = (
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-            <div className="relative z-10 w-full max-w-xl rounded-2xl bg-white shadow-lg p-6">
+            + <div className="relative z-10 w-full max-w-[min(92vw,38rem)] sm:max-w-xl rounded-2xl bg-white shadow-lg p-4 sm:p-6 max-h-[85vh] flex flex-col">
                 <div className="flex items-center justify-between mb-2">
                     <h3 className="text-lg font-semibold">Chat Summary</h3>
                     <button onClick={onClose} className="rounded-md px-2 py-1 border text-sm hover:bg-gray-50">
@@ -137,29 +137,32 @@ export default function SummaryModal({
                     </button>
                 </div>
 
-                {loading && <p className="text-sm text-gray-600">Generating summary…</p>}
+                <div className="flex-1 min-h-0 overflow-y-auto mt-2 pr-1 -mr-1">
+                    {loading && <p className="text-sm text-gray-600">Generating summary…</p>}
 
-                {!loading && error && (
-                    <div className="text-sm text-red-600">Couldn’t generate summary: {error}</div>
-                )}
+                    {!loading && error && (
+                        <div className="text-sm text-red-600">Couldn’t generate summary: {error}</div>
+                    )}
 
-                {!loading && !error && data && (
-                    <div className="space-y-4 mt-2">
-                        <Section label="Issue" text={data.issue} />
-                        <Section label="Emotions" text={data.emotion} />
-                        <Section label="Short-Term Goal" text={data.shortTermGoal} />
-                        <Section label="Long-Term Goal" text={data.longTermGoal} />
-                        <Section label="Summary of Chat" text={data.summary} />
-                        <div className="pt-2 flex justify-end">
-                            <button
-                                onClick={() => exportPdfFromSummary(data)}
-                                className="rounded-xl bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 text-sm"
-                            >
-                                Export to PDF
-                            </button>
+                    {!loading && !error && data && (
+                        <div className="space-y-4">
+                            <Section label="Issue" text={data.issue} />
+                            <Section label="Emotions" text={data.emotion} />
+                            <Section label="Short-Term Goal" text={data.shortTermGoal} />
+                            <Section label="Long-Term Goal" text={data.longTermGoal} />
+                            <Section label="Summary of Chat" text={data.summary} />
+                            <div className="pt-2 flex justify-end">
+                                <button
+                                    onClick={() => exportPdfFromSummary(data)}
+                                    className="rounded-xl bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 text-sm"
+                                >
+                                    Export to PDF
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
+
             </div>
         </div>
     );
@@ -171,7 +174,7 @@ function Section({ label, text }: { label: string; text: string }) {
     return (
         <div>
             <div className="text-sm font-semibold text-[#23B384]">{label}</div>
-            <div className="text-sm text-[#475569] whitespace-pre-wrap">
+            <div className="text-sm sm:text-base text-[#475569] whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-relaxed">
                 {(text || "—").trim()}
             </div>
         </div>
