@@ -14,44 +14,12 @@ export default function Page() {
   const [ack, setAck] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<MsgSlim[]>([]);
-  const [value, setValue] = useState("");
-  const [thinking, setThinking] = useState(false);
 
   const chatTopRef = useRef<HTMLDivElement | null>(null);
 
   function handleExit() {
     setShowChat(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  async function handleSend(e: React.FormEvent) {
-    e.preventDefault();
-    const text = value.trim();
-    if (!text) return;
-
-    setThinking(true);
-    setValue("");
-
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: [...chatMessages, { role: "user", content: text }],
-        }),
-      });
-
-      const data = await res.json();
-      const reply = data.reply || "Sorry, I couldn’t reach the AI just now.";
-
-      setChatMessages((prev) => [
-        ...prev,
-        { role: "user", content: text },
-        { role: "assistant", content: reply },
-      ]);
-    } finally {
-      setThinking(false);
-    }
   }
 
   // ---------- CHAT VIEW ----------

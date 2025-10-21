@@ -2,6 +2,8 @@
 "use client";
 import React from "react";
 import jsPDF from "jspdf";
+import { createPortal } from "react-dom";
+
 
 type Summary = {
     issue: string;
@@ -127,11 +129,13 @@ export default function SummaryModal({
     }
 
     const content = (
-        <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center">
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 overflow-hidden">
             <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-            <div className="relative z-10 w-screen h-[100svh] max-w-none rounded-none  /* mobile = full screen */ bg-white shadow-lg p-4 sm:p-6 sm:w-full sm:max-w-xl sm:h-auto sm:max-h-[85vh] sm:rounded-2xl flex flex-col">
 
-
+            <div className="relative z-10 w-screen h-[100svh] max-w-none rounded-none bg-white shadow-lg p-4
+                    sm:w-full sm:h-auto sm:max-w-xl sm:max-h-[85vh] sm:rounded-2xl sm:p-6 sm:mx-auto sm:my-8
+                    flex flex-col">
+                {/* Header */}
                 <div className="flex items-center justify-between pb-2 border-b flex-shrink-0 sticky top-0 bg-white">
                     <h3 className="text-lg font-semibold">Chat Summary</h3>
                     <button onClick={onClose} className="rounded-md px-2 py-1 border text-sm hover:bg-gray-50">
@@ -139,7 +143,8 @@ export default function SummaryModal({
                     </button>
                 </div>
 
-                <div className="flex-1 min-h-0 overflow-y-auto mt-2 pr-2 overscroll-contain [-webkit-overflow-scrolling:touch]">
+                {/* Scroll area */}
+                <div className="flex-1 min-h-0 overflow-y-auto mt-2 pr-2 pb-24 overscroll-contain [-webkit-overflow-scrolling:touch]">
                     {loading && <p className="text-sm text-gray-600">Generating summary…</p>}
 
                     {!loading && error && (
@@ -153,24 +158,31 @@ export default function SummaryModal({
                             <Section label="Short-Term Goal" text={data.shortTermGoal} />
                             <Section label="Long-Term Goal" text={data.longTermGoal} />
                             <Section label="Summary of Chat" text={data.summary} />
-                            <div className="pt-2 flex justify-end">
-                                <button
-                                    onClick={() => exportPdfFromSummary(data)}
-                                    className="rounded-xl bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 text-sm"
-                                >
-                                    Export to PDF
-                                </button>
-                            </div>
                         </div>
                     )}
                 </div>
 
-
+                {/* Sticky footer actions — outside the scroll area */}
+                <div className="sticky bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t
+                      pt-2 pb-[env(safe-area-inset-bottom,0px)] flex justify-end gap-2">
+                    
+                    {data && (
+                        <button
+                            onClick={() => exportPdfFromSummary(data)}
+                            className="rounded-xl bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 text-sm"
+                        >
+                            Export to PDF
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     );
 
-    return content;
+
+    if (typeof window === "undefined") return null; // SSR safety
+    return createPortal(content, document.body);
+
 }
 
 function Section({ label, text }: { label: string; text: string }) {

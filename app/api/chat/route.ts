@@ -6,6 +6,8 @@ import { NextRequest, NextResponse } from "next/server";
 console.log("🧠 OPENAI_API_KEY present:", !!process.env.OPENAI_API_KEY);
 
 
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -81,7 +83,7 @@ Guide a short, step-by-step breathing/grounding exercise (~1 minute). No diagnos
 `;
   }
 
-  const baseSystem = {
+const baseSystem = {
     role: "system" as const,
     content: `
  You are a counsellor-style wellbeing coach. **Scope**: mental health, emotions, coping, stress, relationships, values, habits, motivation, resilience, mindfulness, help-seeking. 
@@ -89,12 +91,14 @@ Guide a short, step-by-step breathing/grounding exercise (~1 minute). No diagnos
 If user asks outside scope, say you’re focused on wellbeing and offer to link back to feelings/stressors or suggest a more suitable resource. If there's risk of harm or crisis, respond supportively and encourage immediate professional/urgent help per local norms.
 
 Mannerisms & style:
+Phase 1 - discovery of issue
 - Begin with open-ended reflections/questions (UNLESS a protocol is active).
 - Maximum 5 clarifying questions; no repetition.
 - Prefer open prompts over yes/no.
 - Do not rush to solutions; the user leads any move into suggestions/advice. Ask permission first.
 - Warm, empathetic, exploratory tone. Do not assume issues are work-related.
 
+Phase two - goal setting
 When setting goals:
 -Ask only one question at a time.
 - Ensure the goal is acheivable within a short timeframe ~7 days
@@ -110,6 +114,9 @@ Allowed protocols on explicit opt-in:
 - Mood check-in (11 items, 1–4 scale) — strict wording/order, one item at a time, no scoring/diagnosis; finish with a gentle invitation only.
 - Mindfulness pause (~1 minute) — guide calmly, invite a brief reflection, then ask what they’d like next.
 
+Phase 3. Summarise goals and check in
+Ensure the user has a goal at the end of the session and a way to check in.
+
 Overall goals:
 - Help the user feel heard, supported, and in control of pace.
 - Encourage exploration before solutions (outside protocols).
@@ -118,45 +125,54 @@ Overall goals:
 
  `};
 
+
+
   const messagesForModel = protocolSystem
-    ? [baseSystem, { role: "system" as const, content: protocolSystem }, ...clientMessages]
-    : [baseSystem, ...clientMessages];
+      ? [baseSystem, { role: "system" as const, content: protocolSystem }, ...clientMessages]
+      : [baseSystem, ...clientMessages];
 
-  // Ensure at least one user turn (OpenAI requirement)
-  if (!messagesForModel.some(m => m.role === "user")) {
-    messagesForModel.push({ role: "user", content: "Hello" });
+    // Ensure at least one user turn (OpenAI requirement)
+    if(!messagesForModel.some(m => m.role === "user")) {
+      messagesForModel.push({ role: "user", content: "Hello" });
+}
+// after you compute messagesForModel:
+console.log("🧩 SYSTEM first:", messagesForModel[0]?.role, "len:", messagesForModel[0]?.content?.length);
+console.log("🧩 Has protocol system:", !!protocolSystem);
+console.log("🧩 First 4 roles:", messagesForModel.slice(0,4).map(m => m.role));
+console.log("🧩 First user msg:", messagesForModel.find(m => m.role==="user")?.content?.slice(0,140));
+console.log("🧩 Total msgs:", messagesForModel.length);
+
+
+// Timeout protection (25s)
+const controller = new AbortController();
+const timeoutId = setTimeout(() => controller.abort(), 25000);
+
+try {
+  const r = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    signal: controller.signal,
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini", // or "gpt-4o-mini"
+      messages: messagesForModel,
+      temperature: 0.3,
+    }),
+  }).finally(() => clearTimeout(timeoutId));
+
+  if (!r.ok) {
+    const err = await r.text();
+    return json({ reply: `Upstream error: ${r.status} ${err}` }, { status: r.status });
   }
 
-  // Timeout protection (25s)
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 25000);
-
-  try {
-    const r = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini", // or "gpt-4o-mini"
-        messages: messagesForModel,
-        temperature: 0.4,
-      }),
-    }).finally(() => clearTimeout(timeoutId));
-
-    if (!r.ok) {
-      const err = await r.text();
-      return json({ reply: `Upstream error: ${r.status} ${err}` }, { status: r.status });
-    }
-
-    const data = await r.json();
-    const reply: string = data?.choices?.[0]?.message?.content ?? "Sorry, I couldn’t generate a reply.";
-    return json({ reply });
-  } catch (e: any) {
-    const msg = typeof e?.message === "string" ? e.message : String(e);
-    if (msg.includes("aborted")) return json({ reply: "The request timed out. Please try again." }, { status: 504 });
-    return json({ reply: "Server error: " + msg }, { status: 500 });
-  }
+  const data = await r.json();
+  const reply: string = data?.choices?.[0]?.message?.content ?? "Sorry, I couldn’t generate a reply.";
+  return json({ reply });
+} catch (e: any) {
+  const msg = typeof e?.message === "string" ? e.message : String(e);
+  if (msg.includes("aborted")) return json({ reply: "The request timed out. Please try again." }, { status: 504 });
+  return json({ reply: "Server error: " + msg }, { status: 500 });
+}
 }
