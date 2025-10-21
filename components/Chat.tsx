@@ -1,5 +1,6 @@
 'use client';
 
+
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import ExportSummaryButton from "@/components/ui/ExportSummaryButton";
 
@@ -59,6 +60,8 @@ export default function Chat({
   const [value, setValue] = useState("");
   const [thinking, setThinking] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
 
   // Feedback state + visibility control
   const [feedback, setFeedback] = useState<null | "up" | "down">(null);
@@ -188,149 +191,124 @@ export default function Chat({
       feedbackSource === "auto" ? "Is this chat helping?" :
         "Did this chat help?";
 
-  
-  return (
-    <div className="h-dvh bg-stone-50 grid grid-rows-[auto,1fr] overflow-hidden">
 
-      {/* HEADER (title + three buttons) */}
-      <header className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b">
-        <div className="mx-auto max-w-screen-sm px-4 sm:px-6 py-3">
-          <h2 className="text-lg font-semibold text-center sm:text-left">
-            Tortoise & Hare Wellness AI Chat
+  return (
+    <div className="h-full w-full bg-stone-50 grid grid-rows-[auto,1fr] overflow-hidden"> {/* this is the chat message box */}
+      {/* HEADER */}
+      <header className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b"> {/* this is where the box for Title and Buttons are */}
+        <div className="mx-auto max-w-screen-sm px-4 sm:px-6 py-3"> {/* this is the box for the title */}
+          <h2 className="text-xl font-semibold text-center"> {/* this is the code for the title font */}
+            Tortoise & Hare Wellness AI Chat {/* this is the title */}
           </h2>
 
-          {/* 3 equal buttons, consistent sizing */}
-          <div className="mt-2 grid grid-cols-3 gap-2">
-            <div className="w-full">
-              <ExportSummaryButton
-                messages={messages
-                  .filter(m => (m.content ?? "").trim().length > 0)
-                  .map(({ role, content }) => ({ role, content }))}
-              />
-            </div>
-            <button
-              type="button"
-              onClick={handleResetChat}
-              className="rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-[15px] font-medium text-stone-800 hover:bg-stone-100 active:scale-[0.98] transition"
-              title="Reset chat"
-            >
+          {/* Buttons row */}
+          <div className="mt-2 grid grid-cols-3 gap-2"> {/* this is the columns for the three buttons summary, reset and end*/}
+            <ExportSummaryButton
+              className={headerBtn}
+              messages={messages
+                .filter(m => (m.content ?? "").trim().length > 0)
+                .map(({ role, content }) => ({ role, content }))}
+            />
+
+            <button type="button" onClick={handleResetChat} className={headerBtn}>
               Reset
             </button>
-            <button
-              type="button"
-              onClick={handleEndChat}
-              className="rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-[15px] font-medium text-stone-800 hover:bg-stone-100 active:scale-[0.98] transition"
-              title="End chat & show survey"
-            >
+
+            <button type="button" onClick={handleEndChat} className={headerBtn}>
               End
             </button>
           </div>
         </div>
-      </header>
+      </header >
 
-      {/* MAIN – only the messages area scrolls; we pad bottom so fixed footer never overlaps */}
-      <main className="relative">
+      {/* MAIN (conversation starter + chat area) */}
+      < main className="relative h-full overflow-hidden" >
         <div className="mx-auto max-w-screen-sm h-full px-4 sm:px-6">
-          <div className="h-full pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+72px)] flex flex-col gap-3 overflow-hidden">
+          {/* Give room for the fixed footer so content never hides behind it */}
+          <div className="h-full pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+76px)] flex flex-col gap-3 overflow-hidden">
 
-
-            {/* Conversation starter (disabled during protocol) */}
+            {/* Conversation starter (thin bar under header) */}
             <div style={{ opacity: moodActive ? 0.4 : 1, pointerEvents: moodActive ? "none" : "auto" }}>
               <ModeBar onQuick={send} />
             </div>
 
-            {/* Protocol banner */}
+            {/* Optional protocol progress */}
             {moodActive && <ProtocolBanner qNumber={qNumber!} />}
 
-            {/* Messages — fills remaining height and scrolls like a chat app */}
-            <div className="flex-1 min-h-0">
+            {/* CHAT AREA – fills remaining height and scrolls */}
+            <div className="flex-1 min-h-0 overflow-y-auto">
+
               <MessageList items={messages} pending={thinking} />
+
             </div>
 
-            {/* Optional feedback section (non-blocking) */}
+            {/* Optional feedback (kept lightweight) */}
             {feedbackVisible && !moodActive && !thinking && (
               <div className="text-center opacity-90">
                 {feedback === null ? (
                   <>
-                    <p className="mb-2">
-                      {feedbackSource === "manual" ? "Did this chat help?" :
-                        feedbackSource === "auto" ? "Is this chat helping?" :
-                          "Did this chat help?"}
-                    </p>
-                    <button
-                      onClick={() => recordFeedback("up", feedbackSource ?? "manual")}
-                      className="text-2xl mr-3"
-                      aria-label="Thumbs up"
-                      title="Thumbs up"
-                    >👍</button>
-                    <button
-                      onClick={() => recordFeedback("down", feedbackSource ?? "manual")}
-                      className="text-2xl"
-                      aria-label="Thumbs down"
-                      title="Thumbs down"
-                    >👎</button>
+                    <p className="mb-2">{surveyPrompt}</p>
+                    <button onClick={() => recordFeedback("up", feedbackSource ?? "manual")} className="text-2xl mr-3">👍</button>
+                    <button onClick={() => recordFeedback("down", feedbackSource ?? "manual")} className="text-2xl">👎</button>
                   </>
                 ) : (
-                  <p className="mb-2">
-                    {feedback === "up" ? "Thanks for your feedback 💙" : "Thanks — we’ll keep improving 💡"}
-                  </p>
+                  <p className="mb-2">{feedback === "up" ? "Thanks for your feedback 💙" : "Thanks — we’ll keep improving 💡"}</p>
                 )}
               </div>
-
             )}
-
           </div>
-        </div>
 
-        {/* AFTER (white only under the chat width) */}
-        <div className="fixed inset-x-0 bottom-0 z-30 pointer-events-none">
-  <div className="mx-auto max-w-screen-sm px-4 sm:px-6">
-    <div className="pointer-events-auto rounded-t-2xl border-t bg-white/95 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+8px)]">
-      <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex gap-2 px-0">
-        <div className="flex-1 min-w-0">
-          <textarea
-            placeholder={moodActive ? "Answer with 1, 2, 3, or 4…" : "Type your message…"}
-            value={value}
-            onChange={(e) => {
-              let v = e.target.value;
-              if (moodActive) v = v.replace(/[^1-4]/g, "").slice(0, 1);
-              setValue(v);
-              // auto-grow up to ~5 lines
-              const el = e.currentTarget;
-              el.style.height = "auto";
-              const line = parseFloat(getComputedStyle(el).lineHeight || "22");
-              const maxH = line * 5;
-              el.style.height = Math.min(el.scrollHeight, maxH) + "px";
-              el.style.overflowY = el.scrollHeight > maxH ? "auto" : "hidden";
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                send();
-              }
-            }}
-            rows={1}
-            className="block w-full box-border leading-6 min-h-[44px] max-h-40 px-3 py-2 rounded-xl border border-stone-300 bg-white resize-none overflow-x-hidden appearance-none shadow-none focus:shadow-none focus:outline-none focus:ring-0"
-            aria-label="Message input"
-          />
-        </div>
+<div className="fixed inset-x-0 bottom-0 w-[75%] mx-auto bg-transparent z-2000">
+  <div className="mx-auto px-1 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+6px)]">
+    <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex gap-2">
+      <div className="flex-1 min-w-0">
+        <textarea
+          ref={inputRef}
+          placeholder={moodActive ? "Answer with 1, 2, 3, or 4…" : "Type your message…"}
+          value={value}
+          onChange={(e) => {
+            let v = e.target.value;
+            if (moodActive) v = v.replace(/[^1-4]/g, "").slice(0, 1);
+            setValue(v);
 
-        <button
-          disabled={thinking}
-          className="rounded-xl bg-stone-900 text-white px-4 py-2 font-medium disabled:opacity-50"
-        >
-          {thinking ? "Thinking…" : "Send"}
-        </button>
-      </form>
-    </div>
+            const el = e.currentTarget;
+            el.style.height = "auto"; // shrink first
+            const line = parseFloat(getComputedStyle(el).lineHeight || "22");
+            const maxH = line * 5; // ~5 lines max
+            el.style.height = Math.min(el.scrollHeight, maxH) + "px";
+            el.style.overflowY = el.scrollHeight > maxH ? "auto" : "hidden";
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              send();
+            }
+          }}
+          rows={1}
+          className="block w-full box-border leading-6 min-h-[44px] max-h-40 px-3 py-2 rounded-xl border border-stone-300 bg-white resize-none overflow-x-hidden"
+          aria-label="Message input"
+        />
+      </div>
+      <button
+        disabled={thinking}
+        className="rounded-xl bg-stone-900 text-white px-4 py-2 font-medium disabled:opacity-50"
+      >
+        {thinking ? "Thinking…" : "Send"}
+      </button>
+    </form>
   </div>
 </div>
 
 
+        </div>
+      </main >
 
+      <footer>
+        <div className="fixed inset-x-0 bottom-0 w-full mx-auto bg-transparent z-2000">
+        </div>
+      </footer>
 
-      </main>
-    </div>
+    </div >
   );
 }
 

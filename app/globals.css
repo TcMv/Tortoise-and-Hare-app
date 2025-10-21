@@ -4,143 +4,173 @@
 @tailwind utilities;
 
 /* Keep this tiny polish */
-* { outline-offset: 2px; }
+* {
+    outline-offset: 2px;
+}
 
 /* --- Simple brand tokens (used below) --- */
 :root {
-  --th-ink: #11122d;
-  --th-slate: #5F6B7A;
-  --th-sand: #FFF8F1;
-  --th-emerald: #23B384;
+    --th-ink: #11122d;
+    --th-slate: #5F6B7A;
+    --th-sand: #FFF8F1;
+    --th-emerald: #23B384;
 }
 
 /* --- Base (no experimental v4 theme vars) --- */
 @layer base {
-  html, body {
-    @apply bg-[color:var(--th-sand)] text-[color:var(--th-ink)];
-  }
+
+    html,
+    body {
+        @apply bg-[color:var(--th-sand)] text-[color:var(--th-ink)];
+    }
 }
 
 /* -------- Tortoise & Hare Chat — visual skin (kept intact) -------- */
 @layer components {
-  /* Layout rhythm inside the chat area */
-  .thw-chat {
-    @apply space-y-5;
-  }
 
-  /* Headings and section labels that your Chat renders */
-  .thw-chat h1,
-  .thw-chat h2,
-  .thw-chat h3 {
-    @apply font-semibold tracking-tight text-slate-900 dark:text-slate-100;
-  }
-  .thw-chat h1 { @apply text-2xl; }
-  .thw-chat h2 { @apply text-xl; }
-  .thw-chat h3 { @apply text-lg; }
+    /* Layout rhythm inside the chat area */
+    .thw-chat {
+        @apply space-y-5;
+    }
 
-  /* Paragraphs & lists */
-  .thw-chat p { @apply leading-relaxed text-slate-800 dark:text-slate-100; }
-  .thw-chat ul { @apply list-disc pl-5 space-y-1; }
-  .thw-chat li { @apply text-slate-700 dark:text-slate-200; }
+    /* Headings and section labels that your Chat renders */
+    .thw-chat h1,
+    .thw-chat h2,
+    .thw-chat h3 {
+        @apply font-semibold tracking-tight text-slate-900 dark:text-slate-100;
+    }
 
-  /* Bigger default buttons inside the chat */
-  .thw-chat button {
-    @apply inline-flex items-center gap-2 rounded-2xl
-           border border-slate-200 bg-white
-           px-4 py-2.5 text-base font-medium text-slate-800
-           shadow-sm hover:bg-slate-50 active:translate-y-[1px]
-           transition min-h-[44px];
-  }
-  .dark .thw-chat button {
-    @apply border-white/10 bg-slate-900/60 text-slate-100 hover:bg-slate-900;
-  }
+    .thw-chat h1 {
+        @apply text-2xl;
+    }
 
-  /* Chips (QuickChip etc.) a touch larger too */
-  .thw-chat .pill,
-  .thw-chat .chip {
-    @apply px-4 py-2.5 text-base rounded-2xl;
-  }
+    .thw-chat h2 {
+        @apply text-xl;
+    }
 
-  /* Primary/Send button larger and solid */
-  .thw-chat button[type="submit"],
-  .thw-chat .primary {
-    @apply bg-brand-blue text-white border-transparent hover:opacity-95
-           px-5 py-3 text-base min-h-[46px];
-  }
+    .thw-chat h3 {
+        @apply text-lg;
+    }
 
-  /* Input and textarea styling */
-  .thw-chat input[type="text"],
-  .thw-chat input[type="search"],
-  .thw-chat textarea {
-    @apply w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-slate-800 
-           shadow-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--th-emerald)]/40;
-  }
+    /* Paragraphs & lists */
+    .thw-chat p {
+        @apply leading-relaxed text-slate-800 dark:text-slate-100;
+    }
 
-  textarea {
-  overflow-wrap: break-word;
-  word-break: break-word;
-}
+    .thw-chat ul {
+        @apply list-disc pl-5 space-y-1;
+    }
 
-  .dark .thw-chat input[type="text"],
-  .dark .thw-chat input[type="search"],
-  .dark .thw-chat textarea {
-    @apply border-white/10 bg-slate-900/60 text-slate-100 placeholder:text-slate-400;
-  }
+    .thw-chat li {
+        @apply text-slate-700 dark:text-slate-200;
+    }
 
-  /* Pills container / option chips */
-  .thw-chat .section-label {
-    @apply text-slate-500 dark:text-slate-400 text-sm font-medium;
-  }
+    /* Bigger default buttons inside the chat */
+    .thw-chat button {
+        @apply inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-base font-medium text-slate-800 shadow-sm hover:bg-slate-50 active:translate-y-[1px] transition min-h-[44px];
+    }
 
-  /* Optional: give any plain <hr> a subtle look */
-  .thw-chat hr { @apply border-slate-200 dark:border-white/10 my-4; }
+    .dark .thw-chat button {
+        @apply border-white/10 bg-slate-900/60 text-slate-100 hover:bg-slate-900;
+    }
 
-  /* Brand header style for the first H1 in the chat area */
-  .thw-chat h1:first-of-type {
-    @apply text-2xl md:text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 mb-3;
-    position: relative;
-  }
-  .thw-chat h1:first-of-type::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    bottom: -8px;
-    height: 3px;
-    width: 160px;
-    background: linear-gradient(90deg, #2563eb, #16a34a, #f59e0b);
-    border-radius: 9999px;
-    opacity: 0.9;
-  }
+    /* Chips (QuickChip etc.) a touch larger too */
+    .thw-chat .pill,
+    .thw-chat .chip {
+        @apply px-4 py-2.5 text-base rounded-2xl;
+    }
+
+    /* Primary/Send button larger and solid */
+    .thw-chat button[type="submit"],
+    .thw-chat .primary {
+        @apply bg-brand-blue text-white border-transparent hover:opacity-95 px-5 py-3 text-base min-h-[46px];
+    }
+
+    /* Input and textarea styling */
+    .thw-chat input[type="text"],
+    .thw-chat input[type="search"],
+    .thw-chat textarea {
+        @apply w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--th-emerald)]/40;
+    }
+
+    textarea {
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .dark .thw-chat input[type="text"],
+    .dark .thw-chat input[type="search"],
+    .dark .thw-chat textarea {
+        @apply border-white/10 bg-slate-900/60 text-slate-100 placeholder:text-slate-400;
+    }
+
+    /* Pills container / option chips */
+    .thw-chat .section-label {
+        @apply text-slate-500 dark:text-slate-400 text-sm font-medium;
+    }
+
+    /* Optional: give any plain <hr> a subtle look */
+    .thw-chat hr {
+        @apply border-slate-200 dark:border-white/10 my-4;
+    }
+
+    /* Brand header style for the first H1 in the chat area */
+    .thw-chat h1:first-of-type {
+        @apply text-2xl md:text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 mb-3;
+        position: relative;
+    }
+
+    .thw-chat h1:first-of-type::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: -8px;
+        height: 3px;
+        width: 160px;
+        background: linear-gradient(90deg, #2563eb, #16a34a, #f59e0b);
+        border-radius: 9999px;
+        opacity: 0.9;
+    }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 @keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.25s ease-out forwards;
+    animation: fadeIn 0.25s ease-out forwards;
 }
 
 .animate-slideUp {
-  animation: slideUp 0.3s ease-out forwards;
+    animation: slideUp 0.3s ease-out forwards;
 }
 
-html, body {
-  height: 100%;
-  overflow: hidden; /* page won't scroll; only the messages area can */
+html,
+body {
+    height: 100%;
+    overflow: hidden;
+    /* page won't scroll; only the messages area can */
 }
 
 /* Prevent the whole page from bouncing; only the messages list scrolls */
-body { overscroll-behavior-y: none; }
+body {
+    overscroll-behavior-y: none;
+}
