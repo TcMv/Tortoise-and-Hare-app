@@ -1,9 +1,7 @@
 'use client';
 
-
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import ExportSummaryButton from "@/components/ui/ExportSummaryButton";
-
 
 // ---- Types ----
 type Role = "user" | "assistant" | "system";
@@ -17,7 +15,6 @@ function uid() {
 const headerBtn =
   "rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-[15px] font-medium text-stone-800 " +
   "hover:bg-stone-100 active:scale-[0.98] transition";
-
 
 // ---- Helpers for protocol detection (Mood Check-in) ----
 const Q_LINE = /^Q(\d{1,2}):\s/i;
@@ -36,7 +33,6 @@ function isMoodProtocolActive(items: Msg[]) {
 }
 
 // Simple placeholder so Hints has something to read.
-// You can replace this later if you want smarter hints.
 function summarize(_items: Msg[]) {
   return { issue: "", shortTerm: "", longTerm: "" };
 }
@@ -54,14 +50,11 @@ export default function Chat({
       role: "assistant",
       content:
         "Hi there 👋, welcome to Tortoise and Hare Wellness. I am here to support you. \n\n" +
-        "Would you like to tell me about about what brought you here today, or would you prefer to select a conversation starter above?\n\n"
-    }
+        "Would you like to tell me about about what brought you here today, or would you prefer to select a conversation starter above?\n\n",
+    },
   ]);
-  const [value, setValue] = useState("");
   const [thinking, setThinking] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-
 
   // Feedback state + visibility control
   const [feedback, setFeedback] = useState<null | "up" | "down">(null);
@@ -86,10 +79,10 @@ export default function Chat({
     }
   }, [autoShouldShow, feedbackVisible]);
 
-  async function send(prompt?: string) {
-    const content = (prompt ?? value).trim();
-    if (!content) return;
-    setValue("");
+  // ---- SEND LOGIC (async!) ----
+  async function send(content: string) {
+    const text = (content ?? "").trim();
+    if (!text) return;
 
     if (feedback !== null) {
       setFeedback(null);
@@ -97,8 +90,8 @@ export default function Chat({
       setFeedbackSource(null);
     }
 
-    const user: Msg = { id: uid(), role: "user", content };
-    setMessages(m => [...m, user]);
+    const user: Msg = { id: uid(), role: "user", content: text };
+    setMessages((m) => [...m, user]);
 
     abortRef.current?.abort();
     const controller = new AbortController();
@@ -110,7 +103,7 @@ export default function Chat({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: [...messages, user].map(({ role, content }) => ({ role, content }))
+          messages: [...messages, user].map(({ role, content }) => ({ role, content })),
         }),
         signal: controller.signal,
         cache: "no-store",
@@ -121,11 +114,21 @@ export default function Chat({
         throw new Error(txt || `HTTP ${res.status}`);
       }
 
-      const data = await res.json() as { reply: string };
-      setMessages(m => [...m, { id: uid(), role: "assistant", content: data.reply }]);
+      const data = (await res.json()) as { reply: string };
+      setMessages((m) => [
+        ...m,
+        { id: uid(), role: "assistant", content: data.reply },
+      ]);
     } catch (e: any) {
       if (e?.name !== "AbortError") {
-        setMessages(m => [...m, { id: uid(), role: "assistant", content: "Sorry, I couldn’t reach the AI just now. Try again." }]);
+        setMessages((m) => [
+          ...m,
+          {
+            id: uid(),
+            role: "assistant",
+            content: "Sorry, I couldn’t reach the AI just now. Try again.",
+          },
+        ]);
       }
     } finally {
       abortRef.current = null;
@@ -133,8 +136,15 @@ export default function Chat({
     }
   }
 
-
-
+  // Allow page-level textarea to submit via event
+  useEffect(() => {
+    function onExternalSend(e: Event) {
+      const detail = (e as CustomEvent<{ text: string }>).detail;
+      if (detail?.text) send(detail.text);
+    }
+    window.addEventListener("thw:send", onExternalSend as EventListener);
+    return () => window.removeEventListener("thw:send", onExternalSend as EventListener);
+  }, []); // send is stable enough here; user action triggers it
 
   // Reset / End handlers
   const handleResetChat = () => {
@@ -144,13 +154,12 @@ export default function Chat({
         role: "assistant",
         content:
           "Hi there 👋, welcome to Tortoise and Hare Wellness. I am here to support you. \n\n" +
-          "Would you like to tell me about about what brought you here today, or would you prefer me ask you some questions?\n\n"
-      }
+          "Would you like to tell me about about what brought you here today, or would you prefer me ask you some questions?\n\n",
+      },
     ]);
     setFeedback(null);
     setFeedbackVisible(false);
     setFeedbackSource(null);
-    setValue("");
   };
 
   const handleEndChat = () => {
@@ -177,8 +186,16 @@ export default function Chat({
       // non-blocking
     } finally {
       if (source === "manual") {
-        try { localStorage.removeItem("th_chat_state"); } catch { }
-        setMessages([{ id: uid(), role: "assistant", content: "Thanks for your time today. See you next session. 💙" }]);
+        try {
+          localStorage.removeItem("th_chat_state");
+        } catch {}
+        setMessages([
+          {
+            id: uid(),
+            role: "assistant",
+            content: "Thanks for your time today. See you next session. 💙",
+          },
+        ]);
         setFeedbackVisible(false);
         if (typeof onExit === "function") onExit();
         else window.dispatchEvent(new Event("thw:end-chat"));
@@ -187,26 +204,28 @@ export default function Chat({
   }
 
   const surveyPrompt =
-    feedbackSource === "manual" ? "Did this chat help?" :
-      feedbackSource === "auto" ? "Is this chat helping?" :
-        "Did this chat help?";
+    feedbackSource === "manual"
+      ? "Did this chat help?"
+      : feedbackSource === "auto"
+      ? "Is this chat helping?"
+      : "Did this chat help?";
 
-
+  // ---------------- RENDER ----------------
   return (
-    <div className="h-full w-full bg-stone-50 grid grid-rows-[auto,1fr] overflow-hidden"> {/* this is the chat message box */}
+    <div className="h-full w-full bg-stone-50 grid grid-rows-[auto,1fr] overflow-hidden">
       {/* HEADER */}
-      <header className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b"> {/* this is where the box for Title and Buttons are */}
-        <div className="mx-auto max-w-screen-sm px-4 sm:px-6 py-3"> {/* this is the box for the title */}
-          <h2 className="text-xl font-semibold text-center"> {/* this is the code for the title font */}
-            Tortoise & Hare Wellness AI Chat {/* this is the title */}
+      <header className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b">
+        <div className="mx-auto max-w-screen-sm px-4 sm:px-6 py-3">
+          <h2 className="text-xl font-semibold text-center">
+            Tortoise & Hare Wellness AI Chat
           </h2>
 
           {/* Buttons row */}
-          <div className="mt-2 grid grid-cols-3 gap-2"> {/* this is the columns for the three buttons summary, reset and end*/}
+          <div className="mt-2 grid grid-cols-3 gap-2">
             <ExportSummaryButton
               className={headerBtn}
               messages={messages
-                .filter(m => (m.content ?? "").trim().length > 0)
+                .filter((m) => (m.content ?? "").trim().length > 0)
                 .map(({ role, content }) => ({ role, content }))}
             />
 
@@ -219,16 +238,19 @@ export default function Chat({
             </button>
           </div>
         </div>
-      </header >
+      </header>
 
       {/* MAIN (conversation starter + chat area) */}
-      < main className="relative h-full overflow-hidden" >
+      <main className="relative h-full overflow-hidden">
         <div className="mx-auto max-w-screen-sm h-full px-4 sm:px-6">
-          {/* Give room for the fixed footer so content never hides behind it */}
-          <div className="h-full pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+76px)] flex flex-col gap-3 overflow-hidden">
-
-            {/* Conversation starter (thin bar under header) */}
-            <div style={{ opacity: moodActive ? 0.4 : 1, pointerEvents: moodActive ? "none" : "auto" }}>
+          <div className="h-full pt-3 flex flex-col gap-3 overflow-hidden">
+            {/* Conversation starter */}
+            <div
+              style={{
+                opacity: moodActive ? 0.4 : 1,
+                pointerEvents: moodActive ? "none" : "auto",
+              }}
+            >
               <ModeBar onQuick={send} />
             </div>
 
@@ -237,9 +259,7 @@ export default function Chat({
 
             {/* CHAT AREA – fills remaining height and scrolls */}
             <div className="flex-1 min-h-0 overflow-y-auto">
-
               <MessageList items={messages} pending={thinking} />
-
             </div>
 
             {/* Optional feedback (kept lightweight) */}
@@ -248,80 +268,36 @@ export default function Chat({
                 {feedback === null ? (
                   <>
                     <p className="mb-2">{surveyPrompt}</p>
-                    <button onClick={() => recordFeedback("up", feedbackSource ?? "manual")} className="text-2xl mr-3">👍</button>
-                    <button onClick={() => recordFeedback("down", feedbackSource ?? "manual")} className="text-2xl">👎</button>
+                    <button
+                      onClick={() => recordFeedback("up", feedbackSource ?? "manual")}
+                      className="text-2xl mr-3"
+                    >
+                      👍
+                    </button>
+                    <button
+                      onClick={() => recordFeedback("down", feedbackSource ?? "manual")}
+                      className="text-2xl"
+                    >
+                      👎
+                    </button>
                   </>
                 ) : (
-                  <p className="mb-2">{feedback === "up" ? "Thanks for your feedback 💙" : "Thanks — we’ll keep improving 💡"}</p>
+                  <p className="mb-2">
+                    {feedback === "up"
+                      ? "Thanks for your feedback 💙"
+                      : "Thanks — we’ll keep improving 💡"}
+                  </p>
                 )}
               </div>
             )}
           </div>
-
-<div className="fixed inset-x-0 bottom-0 w-[75%] mx-auto bg-transparent z-2000">
-  <div className="mx-auto px-1 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+6px)]">
-    <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex gap-2">
-      <div className="flex-1 min-w-0">
-        <textarea
-          ref={inputRef}
-          placeholder={moodActive ? "Answer with 1, 2, 3, or 4…" : "Type your message…"}
-          value={value}
-          onChange={(e) => {
-            let v = e.target.value;
-            if (moodActive) v = v.replace(/[^1-4]/g, "").slice(0, 1);
-            setValue(v);
-
-            const el = e.currentTarget;
-            el.style.height = "auto"; // shrink first
-            const line = parseFloat(getComputedStyle(el).lineHeight || "22");
-            const maxH = line * 5; // ~5 lines max
-            el.style.height = Math.min(el.scrollHeight, maxH) + "px";
-            el.style.overflowY = el.scrollHeight > maxH ? "auto" : "hidden";
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              send();
-            }
-          }}
-          rows={1}
-          className="block w-full box-border leading-6 min-h-[44px] max-h-40 px-3 py-2 rounded-xl border border-stone-300 bg-white resize-none overflow-x-hidden"
-          aria-label="Message input"
-        />
-      </div>
-      <button
-        disabled={thinking}
-        className="rounded-xl bg-stone-900 text-white px-4 py-2 font-medium disabled:opacity-50"
-      >
-        {thinking ? "Thinking…" : "Send"}
-      </button>
-    </form>
-  </div>
-</div>
-
-
         </div>
-      </main >
-
-      <footer>
-        <div className="fixed inset-x-0 bottom-0 w-full mx-auto bg-transparent z-2000">
-        </div>
-      </footer>
-
-    </div >
+      </main>
+    </div>
   );
 }
 
-function btn(variant: "primary" | "secondary" = "primary") {
-  return {
-    borderRadius: 10,
-    padding: "12px 14px",
-    border: "1px solid " + (variant === "primary" ? "#222" : "#ddd"),
-    background: variant === "primary" ? "#222" : "#fff",
-    color: variant === "primary" ? "#fff" : "#222",
-    cursor: "pointer"
-  } as React.CSSProperties;
-}
+// ---------------- Subcomponents ----------------
 
 function MessageList({ items, pending }: { items: Msg[]; pending: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -331,18 +307,14 @@ function MessageList({ items, pending }: { items: Msg[]; pending: boolean }) {
   }, [items.length, pending]);
 
   return (
-    <div
-      ref={ref}
-      className="h-full overflow-y-auto space-y-2 px-1"
-      aria-live="polite"
-    >
-      {items.map(m => <Bubble key={m.id} role={m.role} text={m.content} />)}
+    <div ref={ref} className="h-full overflow-y-auto space-y-2 px-1" aria-live="polite">
+      {items.map((m) => (
+        <Bubble key={m.id} role={m.role} text={m.content} />
+      ))}
       {pending && <TypingBubble />}
     </div>
   );
 }
-
-
 
 function Bubble({ role, text }: { role: Role; text: string }) {
   const isUser = role === "user";
@@ -362,7 +334,9 @@ function Bubble({ role, text }: { role: Role; text: string }) {
           padding: "10px 12px",
           borderRadius: 14,
           whiteSpace: "pre-wrap",
-          boxShadow: isUser ? "0 4px 12px rgba(94,106,210,0.20)" : "0 2px 8px rgba(0,0,0,0.04)"
+          boxShadow: isUser
+            ? "0 4px 12px rgba(94,106,210,0.20)"
+            : "0 2px 8px rgba(0,0,0,0.04)",
         }}
       >
         {text}
@@ -380,7 +354,7 @@ function TypingBubble() {
           border: "1px solid #e7e7e7",
           padding: "10px 12px",
           borderRadius: 14,
-          width: 64
+          width: 64,
         }}
         aria-label="Assistant is typing"
       >
@@ -393,9 +367,21 @@ function TypingBubble() {
 function ModeBar({ onQuick }: { onQuick: (text: string) => void }) {
   const starters = [
     { label: "Lately I’ve been feeling…", value: "I'd like to talk about what I have been feeling." },
-    { label: "Mood check-in", value: "Hi, please begin a brief mood check-in now. Ask one question at a time (11 items). Start with the first question." },
-    { label: "Mindfulness pause", value: "Yes, please guide a gentle 1-minute breathing pause now, step by step. Then ask how I feel." },
-    { label: "Help me set a goal", value: "I would like assistance setting a goal. Please ask me a couple of questions to understand and help me set a goal" },
+    {
+      label: "Mood check-in",
+      value:
+        "Hi, please begin a brief mood check-in now. Ask one question at a time (11 items). Start with the first question.",
+    },
+    {
+      label: "Mindfulness pause",
+      value:
+        "Yes, please guide a gentle 1-minute breathing pause now, step by step. Then ask how I feel.",
+    },
+    {
+      label: "Help me set a goal",
+      value:
+        "I would like assistance setting a goal. Please ask me a couple of questions to understand and help me set a goal",
+    },
   ];
 
   function handleSelect(e: React.ChangeEvent<HTMLSelectElement>) {
@@ -407,9 +393,7 @@ function ModeBar({ onQuick }: { onQuick: (text: string) => void }) {
 
   return (
     <div className="space-y-2">
-      <div className="text-sm font-semibold text-stone-700/80">
-        Conversation starter
-      </div>
+      <div className="text-sm font-semibold text-stone-700/80">Conversation starter</div>
 
       <select
         onChange={handleSelect}
@@ -417,36 +401,34 @@ function ModeBar({ onQuick }: { onQuick: (text: string) => void }) {
         className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-[15px] leading-6 focus:outline-none focus:ring-2 focus:ring-blue-200"
         aria-label="Conversation starter"
       >
-        <option value="" disabled>Choose a starter…</option>
-        {starters.map(s => (
-          <option key={s.label} value={s.value}>{s.label}</option>
+        <option value="" disabled>
+          Choose a starter…
+        </option>
+        {starters.map((s) => (
+          <option key={s.label} value={s.value}>
+            {s.label}
+          </option>
         ))}
       </select>
     </div>
   );
 }
 
-
-type QuickChipProps = { label: string; onClick?: () => void; className?: string; };
-function QuickChip({ label, onClick, className }: QuickChipProps) {
-  return (
-    <button type="button" onClick={onClick} className={className}>
-      {label}
-    </button>
-  );
-}
-
 function ProtocolBanner({ qNumber }: { qNumber: number }) {
   const pct = Math.round((qNumber / 11) * 100);
   return (
-    <div style={{
-      background: "#eef1ff",
-      border: "1px solid #dfe3ff",
-      borderRadius: 10,
-      padding: 10,
-      marginBottom: 10
-    }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 13 }}>
+    <div
+      style={{
+        background: "#eef1ff",
+        border: "1px solid #dfe3ff",
+        borderRadius: 10,
+        padding: 10,
+        marginBottom: 10,
+      }}
+    >
+      <div
+        style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 13 }}
+      >
         <strong>Mood check-in in progress</strong>
         <span>Q{qNumber}/11</span>
       </div>
@@ -454,40 +436,9 @@ function ProtocolBanner({ qNumber }: { qNumber: number }) {
         <div style={{ width: `${pct}%`, height: "100%", background: "#5e6ad2" }} />
       </div>
       <div style={{ marginTop: 6, fontSize: 12, opacity: 0.75 }}>
-        Please answer with <strong>1</strong>, <strong>2</strong>, <strong>3</strong>, or <strong>4</strong>.
+        Please answer with <strong>1</strong>, <strong>2</strong>, <strong>3</strong>, or{" "}
+        <strong>4</strong>.
       </div>
     </div>
   );
 }
-
-//function Hints({
-//summary,
-//onUse
-//}: {
-//summary: { issue: string; shortTerm: string; longTerm: string };
-//onUse: (t: string) => void;
-//}) {
-//const hints: string[] = [];
-//if (!summary.issue) hints.push("Lately I have been feeling...");
-//if (!summary.shortTerm) hints.push("I'd like some guidance on...");
-//if (!summary.longTerm) hints.push("Can I talk about...");
-
-//if (!hints.length) return null;
-
-//return (
-//<div style={{ marginTop: 16, fontSize: 13, opacity: 0.7 }}>
-//<div style={{ marginBottom: 4 }}>
-//"Powered by Tortoise & Hare Wellness"
-//</div>
-//{/* If you later want clickable hints: */}
-//{/* <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-//{hints.map(h => (
-//<button key={h} onClick={() => onUse(h)} style={{ border:'1px solid #ddd', borderRadius:999, padding:'6px 10px', background:'#fff' }}>
-//{h}
-//</button>
-//))}
-//</div> */}
-//</div>
-//);
-//}
-
