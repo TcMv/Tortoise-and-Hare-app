@@ -40,6 +40,7 @@ export default function Page() {
             width={200}
             height={60}
             priority
+            className="transition dark:invert dark:brightness-110"
           />
         </div>
       </header>
