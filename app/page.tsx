@@ -34,14 +34,27 @@ export default function Page() {
     <main className="min-h-screen flex flex-col bg-[#FFF8F1] text-[#11122D]">
       <header className="sticky top-0 z-40 w-full border-b border-black/5 bg-[#FFF8F1]/90 backdrop-blur">
         <div className="mx-auto max-w-6xl px-4 h-16 flex items-center justify-between">
-          <Image
-            src="/tortoise-hare-logo.png"
-            alt="Tortoise & Hare Wellness"
-            width={200}
-            height={60}
-            priority
-            className="transition dark:invert dark:brightness-110"
-          />
+          <div className="flex items-center gap-3">
+            {/* Light mode */}
+            <Image
+              src="/tortoise-hare-logo.png"
+              alt="Tortoise & Hare Wellness"
+              width={200}
+              height={60}
+              priority
+              className="block dark:hidden"
+            />
+            {/* Dark mode */}
+            <Image
+              src="/tortoise-hare-logo-white.png"
+              alt="Tortoise & Hare Wellness"
+              width={200}
+              height={60}
+              priority
+              className="hidden dark:block"
+            />
+          </div>
+
         </div>
       </header>
 
@@ -122,6 +135,16 @@ export default function Page() {
             width={200}
             height={60}
             priority
+            className="block dark:hidden"
+          />
+          {/* Dark mode */}
+          <Image
+            src="/tortoise-hare-logo-white.png"
+            alt="Tortoise & Hare Wellness"
+            width={200}
+            height={60}
+            priority
+            className="hidden dark:block"
           />
         </div>
       </header>
