@@ -323,9 +323,10 @@ function MessageList({ items, pending }: { items: Msg[]; pending: boolean }) {
 function Bubble({ role, text }: { role: Role; text: string }) {
   const isUser = role === "user";
   const align = isUser ? "flex-end" : "flex-start";
-  const bg = isUser ? "#5e6ad2" : "#fff";
-  const color = isUser ? "#fff" : "#222";
-  const border = isUser ? "transparent" : "#e7e7e7";
+  const bg = isUser ? "#00B090" : "#fff";
+  const color = isUser ? "#ffffff" : "#222";
+  const border = isUser ? "BFEADF" : "#e7e7e7";
+  const shadow= isUser ? "0 4px 12px rgba(16,185,129,0.20)" : "0 2px 8px rgba(0,0,0,0.04)";
 
   return (
     <div style={{ display: "flex", justifyContent: align, marginBottom: 8 }}>
@@ -338,9 +339,7 @@ function Bubble({ role, text }: { role: Role; text: string }) {
           padding: "10px 12px",
           borderRadius: 14,
           whiteSpace: "pre-wrap",
-          boxShadow: isUser
-            ? "0 4px 12px rgba(94,106,210,0.20)"
-            : "0 2px 8px rgba(0,0,0,0.04)",
+          boxShadow: shadow,
         }}
       >
         {text}
@@ -358,15 +357,45 @@ function TypingBubble() {
           border: "1px solid #e7e7e7",
           padding: "10px 12px",
           borderRadius: 14,
-          width: 64,
+          minWidth: 56,
+          display: "flex",
+          alignItems: "center",
+          gap: 6
         }}
         aria-label="Assistant is typing"
+        role="status"
       >
-        <span style={{ opacity: 0.6 }}>typing…</span>
+        <span className="thw-dot" />
+        <span className="thw-dot" style={{ animationDelay: "0.2s" }} />
+        <span className="thw-dot" style={{ animationDelay: "0.4s" }} />
+        <span className="sr-only">Assistant is typing…</span>
+
+        <style jsx>{`
+          .thw-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 9999px;
+            background: #9aa0a6; /* subtle grey */
+            display: inline-block;
+            animation: thwBlink 1.2s infinite ease-in-out both;
+            opacity: 0.25;
+          }
+          @keyframes thwBlink {
+            0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+            40% { opacity: 1; transform: translateY(-1px); }
+          }
+          .sr-only {
+            position: absolute;
+            width: 1px; height: 1px;
+            padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
+            white-space: nowrap; border: 0;
+          }
+        `}</style>
       </div>
     </div>
   );
 }
+
 
 function ModeBar({ onQuick }: { onQuick: (text: string) => void }) {
   const starters = [

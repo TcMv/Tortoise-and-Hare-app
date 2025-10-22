@@ -6,6 +6,7 @@ import Chat from "@/components/Chat";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea"; // 👈 correct import (capitalised)
 import { Button } from "@/components/ui/button";
+import { Send } from "lucide-react";
 
 type MsgSlim = { role: "user" | "assistant" | "system"; content: string };
 
@@ -24,70 +25,89 @@ export default function Page() {
 
   // ---------- CHAT VIEW ----------
   // remove these states + function at the top of Page():
-// const [value, setValue] = useState("");
-// const [thinking, setThinking] = useState(false);
-// async function handleSend(...) { ... }  // DELETE
+  // const [value, setValue] = useState("");
+  // const [thinking, setThinking] = useState(false);
+  // async function handleSend(...) { ... }  // DELETE
 
-// ----- CHAT VIEW -----
-const ChatView = (
-  <main className="min-h-screen flex flex-col bg-[#FFF8F1] text-[#11122D]">
-    <header className="sticky top-0 z-40 w-full border-b border-black/5 bg-[#FFF8F1]/90 backdrop-blur">
-      <div className="mx-auto max-w-6xl px-4 h-16 flex items-center justify-between">
-        <Image
-          src="/tortoise-hare-logo.png"
-          alt="Tortoise & Hare Wellness"
-          width={200}
-          height={60}
-          priority
-        />
+  // ----- CHAT VIEW -----
+  const ChatView = (
+    <main className="min-h-screen flex flex-col bg-[#FFF8F1] text-[#11122D]">
+      <header className="sticky top-0 z-40 w-full border-b border-black/5 bg-[#FFF8F1]/90 backdrop-blur">
+        <div className="mx-auto max-w-6xl px-4 h-16 flex items-center justify-between">
+          <Image
+            src="/tortoise-hare-logo.png"
+            alt="Tortoise & Hare Wellness"
+            width={200}
+            height={60}
+            priority
+          />
+        </div>
+      </header>
+
+      {/* Card holds both chat and input */}
+      <div className="flex-1 flex justify-center items-center bg-stone-50 py-6">
+        <Card className="flex flex-col w-full max-w-5xl h-[80vh] rounded-2xl shadow-sm border bg-white/90 backdrop-blur">
+          <CardContent className="flex flex-col h-full p-6 sm:p-10">
+
+            {/* Chat section (scrollable) */}
+            <div className="flex-1 min-h-0 overflow-y-auto mb-4">
+              <Chat
+                onExit={handleExit}
+                onMessagesChange={(msgs) => setChatMessages(msgs)}
+              />
+            </div>
+
+            {/* Textarea section (inside card, below the scrollable area) */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const el = e.currentTarget.elements.namedItem("thwMsg") as HTMLTextAreaElement | null;
+                const text = el?.value?.trim() ?? "";
+                if (!text) return;
+                window.dispatchEvent(new CustomEvent("thw:send", { detail: { text } })); // send to Chat.tsx
+                if (el) el.value = "";
+                // ✅ reset the input
+                if (el) {
+                  el.value = "";
+                  el.style.height = "";         // back to default (one line)
+                  el.style.overflowY = "hidden"; // avoids residual scrollbars (safe even if not needed)
+                }
+
+              }}
+              className="flex items-end gap-2 border-t pt-4"
+            >
+              <Textarea
+                name="thwMsg"
+                placeholder="Type your message…"
+                rows={1}
+                className="flex-1 resize-none rounded-xl border border-stone-300 px-3 py-2 leading-6 focus:ring-2 focus:ring-stone-400"
+              />
+              <Button
+                type="submit"
+                className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-white bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-xs"
+                aria-label="Send message"
+              >
+                {/* paper plane icon */}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M3 11.5l17-7-7 17-2.5-6.5L3 11.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span>Send</span>
+              </Button>
+
+
+            </form>
+
+          </CardContent>
+        </Card>
       </div>
-    </header>
 
-    {/* Card holds both chat and input */}
-    <div className="flex-1 flex justify-center items-center bg-stone-50 py-6">
-      <Card className="flex flex-col w-full max-w-5xl h-[80vh] rounded-2xl shadow-sm border bg-white/90 backdrop-blur">
-        <CardContent className="flex flex-col h-full p-6 sm:p-10">
-
-          {/* Chat section (scrollable) */}
-          <div className="flex-1 min-h-0 overflow-y-auto mb-4">
-            <Chat
-              onExit={handleExit}
-              onMessagesChange={(msgs) => setChatMessages(msgs)}
-            />
-          </div>
-
-          {/* Textarea section (inside card, below the scrollable area) */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const el = e.currentTarget.elements.namedItem("thwMsg") as HTMLTextAreaElement | null;
-              const text = el?.value?.trim() ?? "";
-              if (!text) return;
-              window.dispatchEvent(new CustomEvent("thw:send", { detail: { text } })); // send to Chat.tsx
-              if (el) el.value = "";
-            }}
-            className="flex items-end gap-2 border-t pt-4"
-          >
-            <Textarea
-              name="thwMsg"
-              placeholder="Type your message…"
-              rows={2}
-              className="flex-1 resize-none rounded-xl border border-stone-300 px-3 py-2 leading-6 focus:ring-2 focus:ring-stone-400"
-            />
-            <Button type="submit">Send</Button>
-          </form>
-
-        </CardContent>
-      </Card>
-    </div>
-
-    {/* Optional footer */}
-    <footer className="px-4 py-5 text-center text-xs text-[#5F6B7A]">
-      This app does not provide medical advice. If you need help, call
-      <strong> Lifeline 13 11 14</strong>.
-    </footer>
-  </main>
-);
+      {/* Optional footer */}
+      <footer className="px-4 py-5 text-center text-xs text-[#5F6B7A]">
+        This app does not provide medical advice. If you need help, call
+        <strong> Lifeline 13 11 14</strong>.
+      </footer>
+    </main>
+  );
 
 
   // ---------- LANDING VIEW ----------
