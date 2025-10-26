@@ -396,12 +396,16 @@ function TypingBubble() {
 
 
 
-function handleSelect(e: React.ChangeEvent<HTMLSelectElement>) {
+function handleQuickChange(e: React.ChangeEvent<HTMLSelectElement>) {
   const v = e.target.value;
   if (!v) return;
-  onQuick(v);
+
+  // ✅ send into Chat via your existing window event
+  window.dispatchEvent(new CustomEvent("thw:send", { detail: { text: v } }));
+
   e.target.value = ""; // reset back to placeholder
 }
+
 
 
 
