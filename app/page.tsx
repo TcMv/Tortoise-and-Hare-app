@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Chat from "@/components/Chat";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea"; // 👈 correct import (capitalised)
 import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
+import StartersModal, { Starter } from "@/components/ui/StartersModal";
 
 type MsgSlim = { role: "user" | "assistant" | "system"; content: string };
 
@@ -18,16 +19,41 @@ export default function Page() {
 
   const chatTopRef = useRef<HTMLDivElement | null>(null);
 
+  // ----- Starters modal state -----
+  const [startersOpen, setStartersOpen] = useState(false);
+  const startersShownRef = useRef(false); // ensure it only opens once per entry
+
+  const starters: Starter[] = [
+    { id: "quick",    label: "I need quick advice about something specific", prompt: "I need quick advice about something specific." },
+    { id: "stress",   label: "I’m feeling stressed or anxious",              prompt: "I'm feeling stressed/anxious and need support." },
+    { id: "goal",     label: "Set a short-term goal for today",              prompt: "Help me set a short-term goal for today." },
+    { id: "longterm", label: "Work on longer-term growth and habits",        prompt: "I'd like to work on long-term goals and habits." },
+    { id: "talk",     label: "I just want to talk it out",                   prompt: "I just want to talk things through for a few minutes." },
+  ];
+
+  // Pop the Starters modal when entering Chat
+  useEffect(() => {
+  if (showChat) setStartersOpen(true);
+}, [showChat]);
+
+
+  useEffect(() => {
+  const openStarters = () => setStartersOpen(true);
+  window.addEventListener("thw:open-starters", openStarters);
+  return () => window.removeEventListener("thw:open-starters", openStarters);
+}, []);
+
+
+  function handleStarterSelect(s: Starter) {
+    setStartersOpen(false);
+    // send to Chat.tsx via your existing window event
+    window.dispatchEvent(new CustomEvent("thw:send", { detail: { text: s.prompt } }));
+  }
+
   function handleExit() {
     setShowChat(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
-
-  // ---------- CHAT VIEW ----------
-  // remove these states + function at the top of Page():
-  // const [value, setValue] = useState("");
-  // const [thinking, setThinking] = useState(false);
-  // async function handleSend(...) { ... }  // DELETE
 
   // ----- CHAT VIEW -----
   const ChatView = (
@@ -54,7 +80,6 @@ export default function Page() {
               className="hidden dark:block"
             />
           </div>
-
         </div>
       </header>
 
@@ -62,6 +87,16 @@ export default function Page() {
       <div className="flex-1 flex justify-center items-center bg-stone-50 py-6">
         <Card className="flex flex-col w-full max-w-5xl h-[80vh] rounded-2xl shadow-sm border bg-white/90 backdrop-blur">
           <CardContent className="flex flex-col h-full p-6 sm:p-10">
+
+            {/* Conversation Starters Modal */}
+            <StartersModal
+              open={startersOpen}
+              starters={starters}
+              onSelect={handleStarterSelect}
+              onClose={() => setStartersOpen(false)}
+              title="Welcome"
+              subtitle="I'm here to support. How do you want to get started today?"
+            />
 
             {/* Chat section (scrollable) */}
             <div className="flex-1 min-h-0 overflow-y-auto mb-4">
@@ -78,15 +113,15 @@ export default function Page() {
                 const el = e.currentTarget.elements.namedItem("thwMsg") as HTMLTextAreaElement | null;
                 const text = el?.value?.trim() ?? "";
                 if (!text) return;
+
                 window.dispatchEvent(new CustomEvent("thw:send", { detail: { text } })); // send to Chat.tsx
-                if (el) el.value = "";
+
                 // ✅ reset the input
                 if (el) {
                   el.value = "";
                   el.style.height = "";         // back to default (one line)
-                  el.style.overflowY = "hidden"; // avoids residual scrollbars (safe even if not needed)
+                  el.style.overflowY = "hidden"; // avoids residual scrollbars
                 }
-
               }}
               className="flex items-end gap-2 border-t pt-4"
             >
@@ -107,8 +142,6 @@ export default function Page() {
                 </svg>
                 <span>Send</span>
               </Button>
-
-
             </form>
 
           </CardContent>
@@ -123,8 +156,7 @@ export default function Page() {
     </main>
   );
 
-
-  // ---------- LANDING VIEW ----------
+  // ----- LANDING VIEW -----
   const LandingView = (
     <main className="min-h-screen flex flex-col bg-[#FFF8F1] text-[#11122D]">
       <header className="sticky top-0 z-40 w-full border-b border-black/5 bg-[#FFF8F1]/90 backdrop-blur">

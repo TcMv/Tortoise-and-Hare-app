@@ -44,261 +44,258 @@ export default function Chat({
   onExit?: () => void;
   onMessagesChange?: (msgs: { role: Role; content: string }[]) => void;
 }) {
-  const [messages, setMessages] = useState<Msg[]>([
-    { id: uid(), role: "assistant", content: "Hi there 👋, welcome to Tortoise and Hare Wellness. I am here to support you. \n\nWould you like to tell me about about what brought you here today, or would you prefer to select a conversation starter above?\n\n" }
-  ]);
 
-const [thinking, setThinking] = useState(false);
-const abortRef = useRef<AbortController | null>(null);
-const messagesRef = useRef(messages);
-useEffect(() => { messagesRef.current = messages; }, [messages]);
+  const [messages, setMessages] = useState<Msg[]>([]);
 
-// Feedback state + visibility control
-const [feedback, setFeedback] = useState<null | "up" | "down">(null);
-const [feedbackVisible, setFeedbackVisible] = useState(false);
-const [feedbackSource, setFeedbackSource] = useState<null | "auto" | "manual">(null);
 
-const summary = useMemo(() => summarize(messages), [messages]);
-const moodActive = isMoodProtocolActive(messages);
-const qNumber = getCurrentQuestionNumber(messages);
+  const [thinking, setThinking] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
+  const messagesRef = useRef(messages);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
 
-// Let parent (page.tsx) mirror the chat if it wants to
-useEffect(() => {
-  onMessagesChange?.(messages.map(({ role, content }) => ({ role, content })));
-}, [messages, onMessagesChange]);
+  // Feedback state + visibility control
+  const [feedback, setFeedback] = useState<null | "up" | "down">(null);
+  const [feedbackVisible, setFeedbackVisible] = useState(false);
+  const [feedbackSource, setFeedbackSource] = useState<null | "auto" | "manual">(null);
 
-// Auto-show after long chats (never during protocol/while thinking)
-const autoShouldShow = !moodActive && !thinking && messages.length >= 16;
-useEffect(() => {
-  if (autoShouldShow && !feedbackVisible) {
-    setFeedbackVisible(true);
-    setFeedbackSource("auto");
+  const summary = useMemo(() => summarize(messages), [messages]);
+  const moodActive = isMoodProtocolActive(messages);
+  const qNumber = getCurrentQuestionNumber(messages);
+
+  // Let parent (page.tsx) mirror the chat if it wants to
+  useEffect(() => {
+    onMessagesChange?.(messages.map(({ role, content }) => ({ role, content })));
+  }, [messages, onMessagesChange]);
+
+  // Auto-show after long chats (never during protocol/while thinking)
+  const autoShouldShow = !moodActive && !thinking && messages.length >= 16;
+  useEffect(() => {
+    if (autoShouldShow && !feedbackVisible) {
+      setFeedbackVisible(true);
+      setFeedbackSource("auto");
+    }
+  }, [autoShouldShow, feedbackVisible]);
+
+  // ---- SEND LOGIC (async!) ----
+  async function send(content: string) {
+    const text = (content ?? "").trim();
+    if (!text) return;
+
+    if (feedback !== null) {
+      setFeedback(null);
+      setFeedbackVisible(false);
+      setFeedbackSource(null);
+    }
+
+    const user: Msg = { id: uid(), role: "user", content: text };
+
+    // ✅ Use the ref so we never send a stale history
+    const history = [...messagesRef.current, user];
+
+    // Update UI immediately
+    setMessages((m) => [...m, user]);
+
+    // Abort any in-flight request
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setThinking(true);
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: history.map(({ role, content }) => ({ role, content })),
+        }),
+        signal: controller.signal,
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        throw new Error(txt || `HTTP ${res.status}`);
+      }
+
+      const data = (await res.json()) as { reply: string };
+      setMessages((m) => [
+        ...m,
+        { id: uid(), role: "assistant", content: data.reply },
+      ]);
+    } catch (e: any) {
+      if (e?.name !== "AbortError") {
+        setMessages((m) => [
+          ...m,
+          {
+            id: uid(),
+            role: "assistant",
+            content: "Sorry, I couldn’t reach the AI just now. Try again.",
+          },
+        ]);
+      }
+    } finally {
+      abortRef.current = null;
+      setThinking(false);
+    }
   }
-}, [autoShouldShow, feedbackVisible]);
 
-// ---- SEND LOGIC (async!) ----
-async function send(content: string) {
-  const text = (content ?? "").trim();
-  if (!text) return;
 
-  if (feedback !== null) {
+  // Allow page-level textarea to submit via event
+  useEffect(() => {
+    function onExternalSend(e: Event) {
+      const detail = (e as CustomEvent<{ text: string }>).detail;
+      if (detail?.text) send(detail.text);
+    }
+    window.addEventListener("thw:send", onExternalSend as EventListener);
+    return () => window.removeEventListener("thw:send", onExternalSend as EventListener);
+  }, []); // send is stable enough here; user action triggers it
+
+  // Reset / End handlers
+  const handleResetChat = () => {
+    // Clear the thread (no old welcome message)
+    setMessages([]);
+
+    // Reset feedback UI as you already do
     setFeedback(null);
     setFeedbackVisible(false);
     setFeedbackSource(null);
-  }
 
-  const user: Msg = { id: uid(), role: "user", content: text };
-
-  // ✅ Use the ref so we never send a stale history
-  const history = [...messagesRef.current, user];
-
-  // Update UI immediately
-  setMessages((m) => [...m, user]);
-
-  // Abort any in-flight request
-  abortRef.current?.abort();
-  const controller = new AbortController();
-  abortRef.current = controller;
-
-  setThinking(true);
-  try {
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        messages: history.map(({ role, content }) => ({ role, content })),
-      }),
-      signal: controller.signal,
-      cache: "no-store",
-    });
-
-    if (!res.ok) {
-      const txt = await res.text().catch(() => "");
-      throw new Error(txt || `HTTP ${res.status}`);
-    }
-
-    const data = (await res.json()) as { reply: string };
-    setMessages((m) => [
-      ...m,
-      { id: uid(), role: "assistant", content: data.reply },
-    ]);
-  } catch (e: any) {
-    if (e?.name !== "AbortError") {
-      setMessages((m) => [
-        ...m,
-        {
-          id: uid(),
-          role: "assistant",
-          content: "Sorry, I couldn’t reach the AI just now. Try again.",
-        },
-      ]);
-    }
-  } finally {
-    abortRef.current = null;
-    setThinking(false);
-  }
-}
+    // 🔔 Ask the page to open the new starters modal
+    window.dispatchEvent(new CustomEvent("thw:open-starters"));
+  };
 
 
-// Allow page-level textarea to submit via event
-useEffect(() => {
-  function onExternalSend(e: Event) {
-    const detail = (e as CustomEvent<{ text: string }>).detail;
-    if (detail?.text) send(detail.text);
-  }
-  window.addEventListener("thw:send", onExternalSend as EventListener);
-  return () => window.removeEventListener("thw:send", onExternalSend as EventListener);
-}, []); // send is stable enough here; user action triggers it
+  const handleEndChat = () => {
+    setFeedbackVisible(true);
+    setFeedbackSource("manual");
+    setTimeout(() => {
+      if (feedback === null) {
+        if (typeof onExit === "function") onExit();
+        else window.dispatchEvent(new Event("thw:end-chat"));
+      }
+    }, 5000);
+  };
 
-// Reset / End handlers
-const handleResetChat = () => {
-  setMessages([
-    {
-      id: uid(),
-      role: "assistant",
-      content:
-        "Hi there 👋, welcome to Tortoise and Hare Wellness. I am here to support you. \n\n" +
-        "Would you like to tell me about about what brought you here today, or would you prefer me ask you some questions?\n\n",
-    },
-  ]);
-  setFeedback(null);
-  setFeedbackVisible(false);
-  setFeedbackSource(null);
-};
-
-const handleEndChat = () => {
-  setFeedbackVisible(true);
-  setFeedbackSource("manual");
-};
-
-// Feedback recorder
-async function recordFeedback(rating: "up" | "down", source: "auto" | "manual") {
-  setFeedback(rating);
-  try {
-    await fetch("/api/feedback", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        rating,
-        source,
-        messageCount: messages.length,
-        ts: new Date().toISOString(),
-      }),
-      cache: "no-store",
-    });
-  } catch {
-    // non-blocking
-  } finally {
-    if (source === "manual") {
-      try {
-        localStorage.removeItem("th_chat_state");
-      } catch { }
-      setMessages([
-        {
-          id: uid(),
-          role: "assistant",
-          content: "Thanks for your time today. See you next session. 💙",
-        },
-      ]);
-      setFeedbackVisible(false);
-      if (typeof onExit === "function") onExit();
-      else window.dispatchEvent(new Event("thw:end-chat"));
+  // Feedback recorder
+  async function recordFeedback(rating: "up" | "down", source: "auto" | "manual") {
+    setFeedback(rating);
+    try {
+      await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rating,
+          source,
+          messageCount: messages.length,
+          ts: new Date().toISOString(),
+        }),
+        cache: "no-store",
+      });
+    } catch {
+      // non-blocking
+    } finally {
+      if (source === "manual") {
+        try {
+          localStorage.removeItem("th_chat_state");
+        } catch { }
+        setMessages([
+          {
+            id: uid(),
+            role: "assistant",
+            content: "Thanks for your time today. See you next session. 💙",
+          },
+        ]);
+        setFeedbackVisible(false);
+        if (typeof onExit === "function") onExit();
+        else window.dispatchEvent(new Event("thw:end-chat"));
+      }
     }
   }
-}
 
-const surveyPrompt =
-  feedbackSource === "manual"
-    ? "Did this chat help?"
-    : feedbackSource === "auto"
-      ? "Is this chat helping?"
-      : "Did this chat help?";
+  const surveyPrompt =
+    feedbackSource === "manual"
+      ? "Did this chat help?"
+      : feedbackSource === "auto"
+        ? "Is this chat helping?"
+        : "Did this chat help?";
 
-// ---------------- RENDER ----------------
-return (
-  <div className="h-full w-full bg-stone-50 grid grid-rows-[auto,1fr] overflow-hidden">
-    {/* HEADER */}
-    <header className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b">
-      <div className="mx-auto max-w-screen-sm px-4 sm:px-6 py-3">
-        <h2 className="text-xl font-semibold text-center">
-          Tortoise & Hare Wellness AI Chat
-        </h2>
+  // ---------------- RENDER ----------------
+  return (
+    <div className="h-full w-full bg-stone-50 grid grid-rows-[auto,1fr] overflow-hidden">
+      {/* HEADER */}
+      <header className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b">
+        <div className="mx-auto max-w-screen-sm px-4 sm:px-6 py-3">
+          <h2 className="text-xl font-semibold text-center">
+            Tortoise & Hare Wellness AI Chat
+          </h2>
 
-        {/* Buttons row */}
-        <div className="mt-2 grid grid-cols-3 gap-2">
-          <ExportSummaryButton
-            className={headerBtn}
-            messages={messages
-              .filter((m) => (m.content ?? "").trim().length > 0)
-              .map(({ role, content }) => ({ role, content }))}
-          />
+          {/* Buttons row */}
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            <ExportSummaryButton
+              className={headerBtn}
+              messages={messages
+                .filter((m) => (m.content ?? "").trim().length > 0)
+                .map(({ role, content }) => ({ role, content }))}
+            />
 
-          <button type="button" onClick={handleResetChat} className={headerBtn}>
-            Reset
-          </button>
+            <button type="button" onClick={handleResetChat} className={headerBtn}>
+              Reset
+            </button>
 
-          <button type="button" onClick={handleEndChat} className={headerBtn}>
-            End
-          </button>
+            <button type="button" onClick={handleEndChat} className={headerBtn}>
+              End
+            </button>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
 
-    {/* MAIN (conversation starter + chat area) */}
-    <main className="relative h-full overflow-hidden">
-      <div className="mx-auto max-w-screen-sm h-full px-4 sm:px-6">
-        <div className="h-full pt-3 flex flex-col gap-3 overflow-hidden">
-          {/* Conversation starter */}
-          <div
-            style={{
-              opacity: moodActive ? 0.4 : 1,
-              pointerEvents: moodActive ? "none" : "auto",
-            }}
-          >
-            <ModeBar onQuick={send} />
-          </div>
+      {/* MAIN (conversation starter + chat area) */}
+      <main className="relative h-full overflow-hidden">
+        <div className="mx-auto max-w-screen-sm h-full px-4 sm:px-6">
+          <div className="h-full pt-3 flex flex-col gap-3 overflow-hidden">
 
-          {/* Optional protocol progress */}
-          {moodActive && <ProtocolBanner qNumber={qNumber!} />}
 
-          {/* CHAT AREA – fills remaining height and scrolls */}
-          <div className="flex-1 min-h-0 overflow-y-auto">
-            <MessageList items={messages} pending={thinking} />
-          </div>
+            {/* Optional protocol progress */}
+            {moodActive && <ProtocolBanner qNumber={qNumber!} />}
 
-          {/* Optional feedback (kept lightweight) */}
-          {feedbackVisible && !moodActive && !thinking && (
-            <div className="text-center opacity-90">
-              {feedback === null ? (
-                <>
-                  <p className="mb-2">{surveyPrompt}</p>
-                  <button
-                    onClick={() => recordFeedback("up", feedbackSource ?? "manual")}
-                    className="text-2xl mr-3"
-                  >
-                    👍
-                  </button>
-                  <button
-                    onClick={() => recordFeedback("down", feedbackSource ?? "manual")}
-                    className="text-2xl"
-                  >
-                    👎
-                  </button>
-                </>
-              ) : (
-                <p className="mb-2">
-                  {feedback === "up"
-                    ? "Thanks for your feedback 💙"
-                    : "Thanks — we’ll keep improving 💡"}
-                </p>
-              )}
+            {/* CHAT AREA – fills remaining height and scrolls */}
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <MessageList items={messages} pending={thinking} />
             </div>
-          )}
+
+            {/* Optional feedback (kept lightweight) */}
+            {feedbackVisible && !moodActive && !thinking && (
+              <div className="text-center opacity-90">
+                {feedback === null ? (
+                  <>
+                    <p className="mb-2">{surveyPrompt}</p>
+                    <button
+                      onClick={() => recordFeedback("up", feedbackSource ?? "manual")}
+                      className="text-2xl mr-3"
+                    >
+                      👍
+                    </button>
+                    <button
+                      onClick={() => recordFeedback("down", feedbackSource ?? "manual")}
+                      className="text-2xl"
+                    >
+                      👎
+                    </button>
+                  </>
+                ) : (
+                  <p className="mb-2">
+                    {feedback === "up"
+                      ? "Thanks for your feedback 💙"
+                      : "Thanks — we’ll keep improving 💡"}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </main>
-  </div>
-);
+      </main>
+    </div>
+  );
 }
 
 // ---------------- Subcomponents ----------------
@@ -326,7 +323,7 @@ function Bubble({ role, text }: { role: Role; text: string }) {
   const bg = isUser ? "#00B090" : "#fff";
   const color = isUser ? "#ffffff" : "#222";
   const border = isUser ? "BFEADF" : "#e7e7e7";
-  const shadow= isUser ? "0 4px 12px rgba(16,185,129,0.20)" : "0 2px 8px rgba(0,0,0,0.04)";
+  const shadow = isUser ? "0 4px 12px rgba(16,185,129,0.20)" : "0 2px 8px rgba(0,0,0,0.04)";
 
   return (
     <div style={{ display: "flex", justifyContent: align, marginBottom: 8 }}>
@@ -397,55 +394,16 @@ function TypingBubble() {
 }
 
 
-function ModeBar({ onQuick }: { onQuick: (text: string) => void }) {
-  const starters = [
-    { label: "Lately I’ve been feeling…", value: "I'd like to talk about what I have been feeling." },
-    {
-      label: "Mood check-in",
-      value:
-        "Hi, please begin a brief mood check-in now. Ask one question at a time (11 items). Start with the first question.",
-    },
-    {
-      label: "Mindfulness pause",
-      value:
-        "Yes, please guide a gentle 1-minute breathing pause now, step by step. Then ask how I feel.",
-    },
-    {
-      label: "Help me set a goal",
-      value:
-        "I would like assistance setting a goal. Please ask me a couple of questions to understand and help me set a goal",
-    },
-  ];
 
-  function handleSelect(e: React.ChangeEvent<HTMLSelectElement>) {
-    const v = e.target.value;
-    if (!v) return;
-    onQuick(v);
-    e.target.value = ""; // reset back to placeholder
-  }
 
-  return (
-    <div className="space-y-2">
-      <div className="text-sm font-semibold text-stone-700/80">Conversation starter</div>
-
-      <select
-        onChange={handleSelect}
-        defaultValue=""
-        className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-[15px] leading-6 focus:outline-none focus:ring-2 focus:ring-blue-200"
-        aria-label="Conversation starter"
-      >
-        <option value="" disabled>
-          Choose a starter…
-        </option>
-        {starters.map((s) => (
-          <option key={s.label} value={s.value}>
-            {s.label}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
+function handleSelect(e: React.ChangeEvent<HTMLSelectElement>) {
+  const v = e.target.value;
+  if (!v) return;
+  onQuick(v);
+  e.target.value = ""; // reset back to placeholder
 }
+
+
 
 function ProtocolBanner({ qNumber }: { qNumber: number }) {
   const pct = Math.round((qNumber / 11) * 100);
