@@ -33,16 +33,14 @@ export default function Page() {
 
   // Pop the Starters modal when entering Chat
   useEffect(() => {
-  if (showChat) setStartersOpen(true);
-}, [showChat]);
-
+    if (showChat) setStartersOpen(true);
+  }, [showChat]);
 
   useEffect(() => {
-  const openStarters = () => setStartersOpen(true);
-  window.addEventListener("thw:open-starters", openStarters);
-  return () => window.removeEventListener("thw:open-starters", openStarters);
-}, []);
-
+    const openStarters = () => setStartersOpen(true);
+    window.addEventListener("thw:open-starters", openStarters);
+    return () => window.removeEventListener("thw:open-starters", openStarters);
+  }, []);
 
   function handleStarterSelect(s: Starter) {
     setStartersOpen(false);
@@ -85,7 +83,8 @@ export default function Page() {
 
       {/* Card holds both chat and input */}
       <div className="flex-1 flex justify-center items-center bg-stone-50 py-6">
-        <Card className="flex flex-col w-full max-w-5xl h-[80vh] rounded-2xl shadow-sm border bg-white/90 backdrop-blur">
+        {/* ⬇️ svh-based height to avoid iOS bars */}
+        <Card className="flex flex-col w-full max-w-5xl h-[calc(100svh-8rem)] rounded-2xl shadow-sm border bg-white/90 backdrop-blur">
           <CardContent className="flex flex-col h-full p-6 sm:p-10">
 
             {/* Conversation Starters Modal */}
@@ -99,7 +98,7 @@ export default function Page() {
             />
 
             {/* Chat section (scrollable) */}
-            <div className="flex-1 min-h-0 overflow-y-auto mb-4">
+            <div className="flex-1 min-h-0 overflow-y-auto mb-6">
               <Chat
                 onExit={handleExit}
                 onMessagesChange={(msgs) => setChatMessages(msgs)}
@@ -123,7 +122,8 @@ export default function Page() {
                   el.style.overflowY = "hidden"; // avoids residual scrollbars
                 }
               }}
-              className="flex items-end gap-2 border-t pt-4"
+              /* ⬇️ sticky + safe bottom padding for iOS home bar */
+              className="sticky bottom-0 z-10 flex items-end gap-2 border-t pt-4 pb-safe bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80"
             >
               <Textarea
                 name="thwMsg"

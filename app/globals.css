@@ -174,3 +174,8 @@ body {
 body {
     overscroll-behavior-y: none;
 }
+
+/* Safe bottom padding for iOS home indicator */
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+}
